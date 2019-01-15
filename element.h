@@ -4,7 +4,7 @@
 #include "node.h"
 #include <array>
 
-enum class ELEMENT_TYPE{TRI,QUAD};
+enum class ELEMENT_TYPE{TRI3,QUAD4};
 
 template<ELEMENT_TYPE etype,uint8_t nnum>
 struct element{

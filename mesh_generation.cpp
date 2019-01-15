@@ -1,7 +1,7 @@
 #include "mesh_generation.h"
 
 
-std::vector<element<ELEMENT_TYPE::TRI,3>> get_tri3_rect_mesh(double Lx, double Ly, uint32_t nelem_x, uint32_t nelem_y,
+std::vector<element<ELEMENT_TYPE::TRI3,3>> get_tri3_rect_mesh(double Lx, double Ly, uint32_t nelem_x, uint32_t nelem_y,
                                                              bool diag)
 {
     double dx = Lx/nelem_x;
@@ -10,7 +10,7 @@ std::vector<element<ELEMENT_TYPE::TRI,3>> get_tri3_rect_mesh(double Lx, double L
 
     uint32_t tmp = 2*nelem_x;
 
-    std::vector<element<ELEMENT_TYPE::TRI,3>> elements(nelem);
+    std::vector<element<ELEMENT_TYPE::TRI3,3>> elements(nelem);
     //elements.reserve(nelem);
 
     if (diag){
@@ -111,13 +111,13 @@ std::vector<element<ELEMENT_TYPE::TRI,3>> get_tri3_rect_mesh(double Lx, double L
     return elements;
 }
 
-std::vector<element<ELEMENT_TYPE::QUAD,4>> get_quad4_rect_mesh(double Lx, double Ly, uint32_t nelem_x, uint32_t nelem_y)
+std::vector<element<ELEMENT_TYPE::QUAD4,4>> get_quad4_rect_mesh(double Lx, double Ly, uint32_t nelem_x, uint32_t nelem_y)
 {
     double dx = Lx/nelem_x;
     double dy = Ly/nelem_y;
     uint32_t nelem = nelem_x*nelem_y;
 
-    std::vector<element<ELEMENT_TYPE::QUAD,4>> elements(nelem);
+    std::vector<element<ELEMENT_TYPE::QUAD4,4>> elements(nelem);
     //elements.reserve(nelem);
 
     for (uint32_t i = 0; i < nelem_y; ++i){
@@ -145,7 +145,7 @@ std::vector<element<ELEMENT_TYPE::QUAD,4>> get_quad4_rect_mesh(double Lx, double
 template<ELEMENT_TYPE etype, uint8_t nnod>
 std::vector<element<etype, nnod> > get_rectangular_mesh(double Lx, double Ly, uint32_t nelem_x, uint32_t nelem_y)
 {
-    if constexpr (etype == ELEMENT_TYPE::QUAD && nnod == 4){
+    if constexpr (etype == ELEMENT_TYPE::QUAD4 && nnod == 4){
         return get_quad4_rect_mesh(Lx,Ly,nelem_x,nelem_y);
     }
 }
