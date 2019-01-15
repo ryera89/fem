@@ -1,36 +1,110 @@
 #include "mesh_generation.h"
 
 
-std::vector<element<ELEMENT_TYPE::TRI,3>> get_tri3_rect_mesh(double Lx, double Ly, uint32_t nelem_x, uint32_t nelem_y,bool diag)
+std::vector<element<ELEMENT_TYPE::TRI,3>> get_tri3_rect_mesh(double Lx, double Ly, uint32_t nelem_x, uint32_t nelem_y,
+                                                             bool diag)
 {
     double dx = Lx/nelem_x;
     double dy = Ly/nelem_y;
     uint32_t nelem = 2*nelem_x*nelem_y;
 
+    uint32_t tmp = 2*nelem_x;
+
     std::vector<element<ELEMENT_TYPE::TRI,3>> elements(nelem);
     //elements.reserve(nelem);
 
-    if (diag){ // "/"
+    if (diag){
+        /*  __ __ __ __
+         * | /| /| /| /|
+         * |/_|/_|/_|/_|
+         * | /| /| /| /|
+         * |/_|/_|/_|/_|
+         * | /| /| /| /|
+         * |/_|/_|/_|/_|
+         * | /| /| /| /|
+         * |/_|/_|/_|/_|
+        */
         for (uint32_t i = 0; i < nelem_y; ++i){
             for (uint32_t j = 0 ; j < nelem_x; ++j){
-                elements[i*nelem_x+j].nodes[0].id = i*nelem_x + j+i;
-                elements[i*nelem_x+j].nodes[0].coord.setX(j*dx);
-                elements[i*nelem_x+j].nodes[0].coord.setY(i*dy);
+                elements[i*tmp+2*j].nodes[0].id = i*nelem_x + j+i;
+                elements[i*tmp+2*j].nodes[0].coord.setX(j*dx);
+                elements[i*tmp+2*j].nodes[0].coord.setY(i*dy);
 
-                elements[i*nelem_x+j].nodes[1].id = i*nelem_x + j+i+1;
-                elements[i*nelem_x+j].nodes[1].coord.setX((j+1)*dx);
-                elements[i*nelem_x+j].nodes[1].coord.setY(i*dy);
+                //elements[i*tmp+*2*j].nodes[1].id = i*nelem_x + j+i+1;
+                //elements[i*tmp+2*j].nodes[1].coord.setX((j+1)*dx);
+                //elements[i*tmp+2*j].nodes[1].coord.setY(i*dy);
 
-                elements[i*nelem_x+j].nodes[2].id = (i+1)*nelem_x + j+i+1;
-                elements[i*nelem_x+j].nodes[2].coord.setX(j*dx);
-                elements[i*nelem_x+j].nodes[2].coord.setY((i+1)*dy);
+                elements[i*tmp+2*j].nodes[1].id = (i+1)*nelem_x + j+i+1;
+                elements[i*tmp+2*j].nodes[1].coord.setX(j*dx);
+                elements[i*tmp+2*j].nodes[1].coord.setY((i+1)*dy);
 
-                //elements[i*nelem_x+j].nodes[3].id = (i+1)*nelem_x + j+i+2;
-                //elements[i*nelem_x+j].nodes[3].coord.setX((j+1)*dx);
-                //elements[i*nelem_x+j].nodes[3].coord.setY((i+1)*dy);
+                elements[i*tmp+2*j].nodes[2].id = (i+1)*nelem_x + j+i+2;
+                elements[i*tmp+2*j].nodes[2].coord.setX((j+1)*dx);
+                elements[i*tmp+2*j].nodes[2].coord.setY((i+1)*dy);
+
+                elements[i*tmp+2*j+1].nodes[0].id = i*nelem_x + j+i;
+                elements[i*tmp+2*j+1].nodes[0].coord.setX(j*dx);
+                elements[i*tmp+2*j+1].nodes[0].coord.setY(i*dy);
+
+                elements[i*tmp+2*j+1].nodes[1].id = i*nelem_x + j+i+1;
+                elements[i*tmp+2*j+1].nodes[1].coord.setX((j+1)*dx);
+                elements[i*tmp+2*j+1].nodes[1].coord.setY(i*dy);
+
+                //elements[i*tmp+2*j+1].nodes[1].id = (i+1)*nelem_x + j+i+1;
+                //elements[i*tmp+2*j+1].nodes[1].coord.setX(j*dx);
+                //elements[i*tmp+2*j+1].nodes[1].coord.setY((i+1)*dy);
+
+                elements[i*tmp+2*j+1].nodes[2].id = (i+1)*nelem_x + j+i+2;
+                elements[i*tmp+2*j+1].nodes[2].coord.setX((j+1)*dx);
+                elements[i*tmp+2*j+1].nodes[2].coord.setY((i+1)*dy);
             }
         }
-    }else{ // "\"
+    }else{
+        /*  __ __ __ __
+         * |\ |\ |\ |\ |
+         * |_\|_\|_\|_\|
+         * |\ |\ |\ |\ |
+         * |_\|_\|_\|_\|
+         * |\ |\ |\ |\ |
+         * |_\|_\|_\|_\|
+         * |\ |\ |\ |\ |
+         * |_\|_\|_\|_\|
+        */
+        for (uint32_t i = 0; i < nelem_y; ++i){
+            for (uint32_t j = 0 ; j < nelem_x; ++j){
+                elements[i*tmp+2*j].nodes[0].id = i*nelem_x + j+i;
+                elements[i*tmp+2*j].nodes[0].coord.setX(j*dx);
+                elements[i*tmp+2*j].nodes[0].coord.setY(i*dy);
+
+                elements[i*tmp+2*j].nodes[1].id = i*nelem_x + j+i+1;
+                elements[i*tmp+2*j].nodes[1].coord.setX((j+1)*dx);
+                elements[i*tmp+2*j].nodes[1].coord.setY(i*dy);
+
+                elements[i*tmp+2*j].nodes[2].id = (i+1)*nelem_x + j+i+1;
+                elements[i*tmp+2*j].nodes[2].coord.setX(j*dx);
+                elements[i*tmp+2*j].nodes[2].coord.setY((i+1)*dy);
+
+                //elements[i*tmp+2*j].nodes[2].id = (i+1)*nelem_x + j+i+2;
+                //elements[i*tmp+2*j].nodes[2].coord.setX((j+1)*dx);
+                //elements[i*tmp+2*j].nodes[2].coord.setY((i+1)*dy);
+
+                //elements[i*tmp+2*j+1].nodes[0].id = i*nelem_x + j+i;
+                //elements[i*tmp+2*j+1].nodes[0].coord.setX(j*dx);
+                //elements[i*tmp+2*j+1].nodes[0].coord.setY(i*dy);
+
+                elements[i*tmp+2*j+1].nodes[0].id = i*nelem_x + j+i+1;
+                elements[i*tmp+2*j+1].nodes[0].coord.setX((j+1)*dx);
+                elements[i*tmp+2*j+1].nodes[0].coord.setY(i*dy);
+
+                elements[i*tmp+2*j+1].nodes[1].id = (i+1)*nelem_x + j+i+1;
+                elements[i*tmp+2*j+1].nodes[1].coord.setX(j*dx);
+                elements[i*tmp+2*j+1].nodes[1].coord.setY((i+1)*dy);
+
+                elements[i*tmp+2*j+1].nodes[2].id = (i+1)*nelem_x + j+i+2;
+                elements[i*tmp+2*j+1].nodes[2].coord.setX((j+1)*dx);
+                elements[i*tmp+2*j+1].nodes[2].coord.setY((i+1)*dy);
+            }
+        }
 
     }
 
