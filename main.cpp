@@ -48,6 +48,28 @@ std::cout << tri3_mesh_2.element_connect << "\n";
 int i = 0;
 for (auto &coor:quad4_mesh.nodes_coordinates) std::cout << i++ << "  " << coor.x() << "  " << coor.y() << "\n";
 
+std::vector<MatDoub> X(5,MatDoub(4,2));
+MatDoub dN = {{1,1,1,1},
+              {2,2,2,2}};
+
+std::iota(X[0].begin(),X[0].end(),0.0);
+std::iota(X[1].begin(),X[1].end(),8);
+std::iota(X[2].begin(),X[2].end(),16);
+std::iota(X[3].begin(),X[3].end(),24);
+std::iota(X[4].begin(),X[4].end(),32);
+
+std::vector<MatDoub> v_JT = transpose_jacobian(dN,X);
+
+std::cout << v_JT[0] << "\n";
+std::cout << dN*X[0] << "\n";
+std::cout << v_JT[1] << "\n";
+std::cout << dN*X[1] << "\n";
+std::cout << v_JT[2] << "\n";
+std::cout << dN*X[2] << "\n";
+std::cout << v_JT[3] << "\n";
+std::cout << dN*X[3] << "\n";
+std::cout << v_JT[4] << "\n";
+std::cout << dN*X[4] << "\n";
 
 return a.exec();
 }

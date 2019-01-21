@@ -1,6 +1,6 @@
 #include "matrix.h"
 
-//*template<typename T>
+///*template<typename T>
 //std::ostream& operator << (std::ostream& os,const Matrix<T,2> &m){
 //    //std::ios_base::fmtflags ff = std::ios::scientific;
 //    //ff |= std::ios::showpos;

@@ -40,11 +40,25 @@ extern template struct rectangular_mesh<ELEMENT_TYPE::TRI3>;
 //TODO: cambiar esta funcion de header
 //dN: matriz dN(dim,nodxelem): derivadas de funciones de forma elemento master
 //X: vector de coordenadas por elemento X(nelem,COORD), COORD(nodxelem,dim): coordenadas de los nodos por elemento
-std::vector<MatDoub> transpose_jacobian(const MatDoub &dN,const std::vector<MatDoub> &X){
-    size_t dim = dN.rows();
-    size_t nodxelem = dN.cols();
+inline std::vector<MatDoub> transpose_jacobian(const MatDoub &dN,const std::vector<MatDoub> &X){
+    //size_t dim = dN.rows();
+    //size_t nodxelem = dN.cols();
     size_t nelem = X.size();
-    std::vector v_JT()
+    //std::vector<MatDoub> v_JT(nelem,MatDoub(dim,dim));
+    std::vector<MatDoub> v_JT(nelem);
+    std::transform(X.begin(),X.end(),v_JT.begin(),[&dN](const auto &x){return dN*x;});
+    return v_JT;
 }
 
+inline uint8_t gauss_integration_points(ELEMENT_TYPE etype){
+    switch (etype) {
+    case ELEMENT_TYPE::TRI3:
+        return 1;
+    case ELEMENT_TYPE::QUAD4:
+        return 4;
+    //default:
+        //return 0;
+    }
+    return 0;
+}
 #endif // MESH_H
