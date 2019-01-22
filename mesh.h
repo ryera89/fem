@@ -50,14 +50,22 @@ inline std::vector<MatDoub> transpose_jacobian(const MatDoub &dN,const std::vect
     std::transform(X.begin(),X.end(),v_JT.begin(),[&dN](const auto &x){return dN*x;});
     return v_JT;
 }
+//dN(2,4); v_invJT(nelem); invJT(2,2)
+inline std::vector<MatDoub> quad4_element_shape_functions_derivatives(const std::vector<MatDoub> &v_invJT,
+                                                                      const MatDoub &dN){
+    size_t nelem = v_invJT.size();
+    std::vector<MatDoub> v_dN(nelem);
+    std::transform(v_invJT.begin(),v_invJT.end(),v_dN.begin(),[&dN](const auto &invJT){return invJT*dN;});
+    return v_dN;
+}
 
-VecDoub quad4_shape_functions(const QPointF &p){
+VecDoub quad4_master_element_shape_functions(const QPointF &p){
     return {0.25*(1 - p.x() - p.y() + p.x()*p.y()),0.25*(1 + p.x() - p.y() - p.x()*p.y()),
             0.25*(1 + p.x() + p.y() + p.x()*p.y()),0.25*(1 - p.x() + p.y() - p.x()*p.y())};
 }
-MatDoub quad4_shape_functions_gradient(const QPointF &p){
-    return {{0.25*(-1+p.y()),0.25*(1-p.y()),0.25*(1+p.y()),-0.25*(1+p.y())},
-            {0.25*(-1+p.x()),0.25*(-1-p.x()),0.25*(1+p.x()),0.25*(1-p.x())}};
+MatDoub quad4_master_element_shape_functions_gradient(const QPointF &p){
+    return {{0.25*(-1+p.y()),0.25*(1-p.y()),0.25*(1+p.y()),-0.25*(1+p.y())}, //Ni,x
+            {0.25*(-1+p.x()),0.25*(-1-p.x()),0.25*(1+p.x()),0.25*(1-p.x())}}; //Ni,y
 }
 
 struct gaussian_cuadrature{
