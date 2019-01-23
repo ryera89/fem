@@ -71,5 +71,11 @@ std::cout << dN*X[3] << "\n";
 std::cout << v_JT[4] << "\n";
 std::cout << dN*X[4] << "\n";
 
+std::complex<double> z(2,3);
+double r = 10;
+std::complex<double> z2 = r + z;
+
+std::cout << z2 << "\n";
+
 return a.exec();
 }

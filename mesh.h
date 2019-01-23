@@ -8,6 +8,33 @@
 typedef Matrix<uint32_t,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatUint32;
 typedef Matrix<double,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatDoub;
 typedef Matrix<double,1,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> VecDoub;
+typedef Matrix<std::complex<double>,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatCompx;
+typedef std::complex<double> complex;
+
+inline MatCompx operator+(const MatDoub &m1,const MatCompx &m2){
+    assert(m1.rows() == m2.rows() && m1.cols() == m2.cols());
+    MatCompx RES(m1.rows(),m1.cols());
+    std::transform(m1.begin(),m1.end(),m2.begin(),RES.begin(),[](const auto &r,const auto &c){return r + c;});
+    return RES;
+}
+inline MatCompx operator-(const MatDoub &m1,const MatCompx &m2){
+    assert(m1.rows() == m2.rows() && m1.cols() == m2.cols());
+    MatCompx RES(m1.rows(),m1.cols());
+    std::transform(m1.begin(),m1.end(),m2.begin(),RES.begin(),[](const auto &r,const auto &c){return r - c;});
+    return RES;
+}
+inline MatCompx operator+(const MatCompx &m1,const MatDoub &m2){
+    assert(m1.rows() == m2.rows() && m1.cols() == m2.cols());
+    MatCompx RES(m1.rows(),m1.cols());
+    std::transform(m1.begin(),m1.end(),m2.begin(),RES.begin(),[](const auto &c,const auto &r){return c + r;});
+    return RES;
+}
+inline MatCompx operator-(const MatCompx &m1,const MatDoub &m2){
+    assert(m1.rows() == m2.rows() && m1.cols() == m2.cols());
+    MatCompx RES(m1.rows(),m1.cols());
+    std::transform(m1.begin(),m1.end(),m2.begin(),RES.begin(),[](const auto &c,const auto &r){return c - r;});
+    return RES;
+}
 
 //enum class ELEMENT_TYPE{TRI3,QUAD4};
 
@@ -51,19 +78,27 @@ inline std::vector<MatDoub> transpose_jacobian(const MatDoub &dN,const std::vect
     return v_JT;
 }
 //dN(2,4); v_invJT(nelem); invJT(2,2)
-inline std::vector<MatDoub> quad4_element_shape_functions_derivatives(const std::vector<MatDoub> &v_invJT,
-                                                                      const MatDoub &dN){
+inline std::vector<MatDoub> quad4_element_shape_functions_derivatives(const MatDoub &dN,
+                                                                      const std::vector<MatDoub> &v_invJT){
     size_t nelem = v_invJT.size();
     std::vector<MatDoub> v_dN(nelem);
     std::transform(v_invJT.begin(),v_invJT.end(),v_dN.begin(),[&dN](const auto &invJT){return invJT*dN;});
     return v_dN;
 }
-
-VecDoub quad4_master_element_shape_functions(const QPointF &p){
+inline std::vector<MatCompx> quad4_element_shape_functions_derivatives_plus_imaginary_term(const std::vector<MatDoub> &shapFuncDer,
+                                                                                           const VecDoub &shapFunc,const VecDoub &k){
+    size_t nelem = shapFuncDer.size();
+    MatCompx TMP = {{complex(0,k(0)*shapFunc(0)),complex(0,k(0)*shapFunc(1)),complex(0,k(0)*shapFunc(2)),complex(0,k(0)*shapFunc(3))},
+                    {complex(0,k(1)*shapFunc(0)),complex(0,k(1)*shapFunc(1)),complex(0,k(1)*shapFunc(2)),complex(0,k(1)*shapFunc(3))}};
+    std::vector<MatCompx> v_B(nelem);
+    std::transform(shapFuncDer.begin(),shapFuncDer.end(),v_B.begin(),[&TMP](const auto &r){return r+TMP;});
+    return v_B;
+}
+inline VecDoub quad4_master_element_shape_functions(const QPointF &p){
     return {0.25*(1 - p.x() - p.y() + p.x()*p.y()),0.25*(1 + p.x() - p.y() - p.x()*p.y()),
             0.25*(1 + p.x() + p.y() + p.x()*p.y()),0.25*(1 - p.x() + p.y() - p.x()*p.y())};
 }
-MatDoub quad4_master_element_shape_functions_gradient(const QPointF &p){
+inline MatDoub quad4_master_element_shape_functions_gradient(const QPointF &p){
     return {{0.25*(-1+p.y()),0.25*(1-p.y()),0.25*(1+p.y()),-0.25*(1+p.y())}, //Ni,x
             {0.25*(-1+p.x()),0.25*(-1-p.x()),0.25*(1+p.x()),0.25*(1-p.x())}}; //Ni,y
 }
