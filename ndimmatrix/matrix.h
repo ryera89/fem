@@ -1998,18 +1998,18 @@ public:
 //        std::for_each(res.begin(),res.end(),[&val](T &elem){elem = val-elem;});
 //        return res;
 //    }
-//    template<typename Scalar,typename T,typename RT = std::common_type_t<Scalar,T>,size_t N>
-//    inline Matrix<RT,N> operator*(const Scalar &val,const Matrix<T,N> &m){
-//        Matrix<RT,N> res(m);
-//        std::for_each(res.begin(),res.end(),[&val](T &elem){elem = val*elem;});
-//        return res;
-//    }
-//    template<typename Scalar,typename T,typename RT = std::common_type_t<Scalar,T>,size_t N>
-//    inline Matrix<RT,N> operator*(const Matrix<T,N> &m,const Scalar &val){
-//        Matrix<RT,N> res(m);
-//        res*=val;
-//        return res;
-//    }
+    template<typename Scalar,typename T,typename RT = std::common_type_t<Scalar,T>,size_t N>
+    inline Matrix<RT,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> operator*(const Scalar &val,const Matrix<T,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> &m){
+        Matrix<RT,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> res(m);
+        std::for_each(res.begin(),res.end(),[&val](T &elem){elem = val*elem;});
+        return res;
+    }
+    template<typename Scalar,typename T,typename RT = std::common_type_t<Scalar,T>,size_t N>
+    inline Matrix<RT,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> operator*(const Matrix<T,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> &m,const Scalar &val){
+        Matrix<RT,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> res(m);
+        res*=val;
+        return res;
+    }
 //    template<typename Scalar,typename T,typename RT = std::common_type_t<Scalar,T>,size_t N>
 //    inline Matrix<RT,N> operator/(const Matrix<T,N> &m,const Scalar &val){
 //        //TODO controlar division por cero
@@ -2017,19 +2017,20 @@ public:
 //        res/=val;
 //        return res;
 //    }
-//    template<typename T1,typename T2,typename RT = std::common_type_t<T1,T2>,size_t N>
-//    inline Matrix<RT,N> operator+(const Matrix<T1,N> &m1,const Matrix<T2,N> &m2){
-//        Matrix<RT,N> res(m1);
-//        res+=m2;
-//        return res;
-//    }
-//    template<typename T1,typename T2,typename RT = std::common_type_t<T1,T2>,size_t N>
-//    inline Matrix<RT,N> operator-(const Matrix<T1,N> &m1,const Matrix<T2,N> &m2){
-//        Matrix<RT,N> res(m1);
-//        res-=m2;
-//        return res;
-//    }
-
+    template<typename T1,typename T2,typename RT = std::common_type_t<T1,T2>,size_t N>
+    inline Matrix<RT,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> operator+(const Matrix<T1,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> &m1,
+                                                                               const Matrix<T2,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> &m2){
+        Matrix<RT,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> res(m1);
+        res+=m2;
+        return res;
+    }
+    template<typename T1,typename T2,typename RT = std::common_type_t<T1,T2>,size_t N>
+    inline Matrix<RT,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> operator-(const Matrix<T1,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> &m1,
+                                                                               const Matrix<T2,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> &m2){
+        Matrix<RT,N,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> res(m1);
+        res-=m2;
+        return res;
+    }
 //    template<typename T1,typename T2,typename RT = std::common_type_t<T1,T2>>
 //    inline RT operator*(const Matrix<T1,1> &v1,const Matrix<T2,1> &v2){
 //        return std::inner_product(v1.begin(),v1.end(),v2.begin(),0.0);

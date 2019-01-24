@@ -5,6 +5,7 @@
 #include "ndimmatrix/matrix.h"
 #include "element.h"
 
+
 typedef Matrix<uint32_t,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatUint32;
 typedef Matrix<double,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatDoub;
 typedef Matrix<double,1,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> VecDoub;
@@ -131,12 +132,38 @@ struct gaussian_cuadrature{
                        vres.begin(),[&f](auto &p,auto &w){return w*f(p);});
         return vres;
     }
-    double integrate(double (*f)(const QPointF &x)){
+    double integrate(double (*f)(const QPointF &x)) const{
         return std::inner_product(gauss_points.begin(),gauss_points.end(),weights.begin(),0.0,std::plus<double>(),
-                                  [&f](auto &p,auto &w){return w*f(p);});
+                                  [&f](const auto &p,const auto &w){return w*f(p);});
+    }
+    MatDoub integrate(MatDoub (*f)(const QPointF &x)) const{
+        return std::inner_product(gauss_points.begin(),gauss_points.end(),weights.begin(),MatDoub(),std::plus<MatDoub>(),
+                                  [&f](const auto &p,const auto &w){return w*f(p);});
     }
 
 };
+
+inline std::vector<MatDoub> fononic_mass_matrix_elemental(const VecDoub &rho,const VecDoub &jac_det,
+                                                          VecDoub (*shapeFun)(const QPointF &p),const gaussian_cuadrature &g_cuad){
+    assert(rho.size() == jac_det.size());
+    //uint32_t ipoints = g_cuad.gauss_points_number;
+    std::vector<MatDoub> m_elem(rho.size());
+    std::transform(rho.begin(),rho.end(),jac_det.begin(),m_elem.begin(),[&shapeFun,&g_cuad](const auto &erho,const auto &ejac_det){
+        g_cuad.integrate([erho,ejac_det,&shapeFun](const QPoint &p){
+            VecDoub N = shapeFun(p);
+            size_t nodxelem = N.size();
+            MatDoub R(nodxelem,nodxelem);
+            for (size_t i = 0; i < nodxelem; ++i){
+                for (size_t j = 0; j < nodxelem; ++j){
+                    R(i,j) = erho*ejac_det*N(i)*N(j);
+                }
+            }
+            return R;
+        });
+    });
+    return m_elem;
+}
+
 
 inline std::tuple<MatDoub,double> inv_det_2x2_Matrix(const MatDoub &A){
     assert(A.rows() == 2 && A.cols() == 2);
