@@ -77,5 +77,7 @@ std::complex<double> z2 = r + z;
 
 std::cout << z2 << "\n";
 
+std::cout << 7/2 << "\n";
+
 return a.exec();
 }

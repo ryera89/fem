@@ -2,10 +2,31 @@
 #define ELEMENT_H
 
 #include "node.h"
+#include "ndimmatrix/matrix.h"
 #include <array>
+
+//TODO: mover luego a matrix.h
+typedef Matrix<uint32_t,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatUint32;
+typedef Matrix<double,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatDoub;
+typedef Matrix<double,1,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> VecDoub;
+typedef Matrix<std::complex<double>,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatCompx;
+typedef std::complex<double> complex;
+typedef Matrix<complex,2,Matrix_Type::HER,Matrix_Storage_Scheme::UPP> HMatCompx;
 
 enum class ELEMENT_TYPE{TRI3,QUAD4};
 
+//funciones de forma del elemento master [QUAD4]
+inline VecDoub quad4_master_element_shape_functions(const QPointF &p){
+    return {0.25*(1 - p.x() - p.y() + p.x()*p.y()),0.25*(1 + p.x() - p.y() - p.x()*p.y()),
+            0.25*(1 + p.x() + p.y() + p.x()*p.y()),0.25*(1 - p.x() + p.y() - p.x()*p.y())};
+}
+//Derivadas de las funciones de forma del elemento master [QUAD4]
+inline MatDoub quad4_master_element_shape_functions_gradient(const QPointF &p){
+    return {{0.25*(-1+p.y()),0.25*(1-p.y()),0.25*(1+p.y()),-0.25*(1+p.y())}, //Ni,x
+            {0.25*(-1+p.x()),0.25*(-1-p.x()),0.25*(1+p.x()),0.25*(1-p.x())}}; //Ni,y
+}
+
+//TODO comentariar esto que no se va a usar
 template<ELEMENT_TYPE etype,uint8_t nnum>
 struct element{
     static constexpr ELEMENT_TYPE type = etype;
