@@ -6,7 +6,7 @@
 #include "utilities.h"
 
 
-inline MatCompx fononic_Bimag(const VecDoub &N,const VecDoub &k){
+inline MatCompx fononic_Bimag(const VecDoub &N,const VecDoub &k){ //imaginary part i(k x w)
     MatCompx TMP(k.size(),N.size());
     for (size_t i = 0; i < TMP.rows(); ++i){
         for (size_t j = 0; j < TMP.cols(); ++j){

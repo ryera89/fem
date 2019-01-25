@@ -1553,6 +1553,27 @@ public:
             return _elems[j + 0.5*i*(i + 1)];
         }
     };
+    //TODO: Mover esta estructura a otro header
+    struct indexs_val{
+        uint32_t row;
+        uint32_t col;
+        double val;
+    };
+    inline bool operator == (const indexs_val &iv1,const indexs_val &iv2){return (iv1.row == iv2.row && iv1.col == iv2.col);}
+    inline bool operator != (const indexs_val &iv1,const indexs_val &iv2){return !(iv1 == iv2);}
+    inline bool operator < (const indexs_val &iv1,const indexs_val &iv2){
+        return ((iv1.row < iv2.row) || (iv1.row == iv2.row && iv1.col < iv2.col));
+    }
+    inline bool operator > (const indexs_val &iv1,const indexs_val &iv2){
+        return ((iv1.row > iv2.row) || (iv1.row == iv2.row && iv1.col > iv2.col));
+    }
+    inline bool operator <= (const indexs_val &iv1,const indexs_val &iv2){
+        return (iv1 < iv2 || iv1 == iv2);
+    }
+    inline bool operator >= (const indexs_val &iv1,const indexs_val &iv2){
+        return (iv1 > iv2 || iv1 == iv2);
+    }
+
     //Matrix General-Sparse CSR3:compress sparse row format 3 array variant
     template<typename T>
     class Matrix<T,2,Matrix_Type::GEN,Matrix_Storage_Scheme::CSR3>{
