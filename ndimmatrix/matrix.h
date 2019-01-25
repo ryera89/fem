@@ -2268,6 +2268,39 @@ public:
 //            return os;
 //        //}
 //    }*/
+    //TODO: mover luego a matrix.h
+    typedef Matrix<uint32_t,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatUint32;
+    typedef Matrix<double,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatDoub;
+    typedef Matrix<double,1,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> VecDoub;
+    typedef Matrix<std::complex<double>,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatCompx;
+    typedef std::complex<double> complex;
+    typedef Matrix<complex,2,Matrix_Type::HER,Matrix_Storage_Scheme::UPP> HMatCompx;
+    typedef Matrix<double,2,Matrix_Type::SYMM,Matrix_Storage_Scheme::UPP> SMatDoub;
+
+    inline MatCompx operator+(const MatDoub &m1,const MatCompx &m2){
+        assert(m1.rows() == m2.rows() && m1.cols() == m2.cols());
+        MatCompx RES(m1.rows(),m1.cols());
+        std::transform(m1.begin(),m1.end(),m2.begin(),RES.begin(),[](const auto &r,const auto &c){return r + c;});
+        return RES;
+    }
+    inline MatCompx operator-(const MatDoub &m1,const MatCompx &m2){
+        assert(m1.rows() == m2.rows() && m1.cols() == m2.cols());
+        MatCompx RES(m1.rows(),m1.cols());
+        std::transform(m1.begin(),m1.end(),m2.begin(),RES.begin(),[](const auto &r,const auto &c){return r - c;});
+        return RES;
+    }
+    inline MatCompx operator+(const MatCompx &m1,const MatDoub &m2){
+        assert(m1.rows() == m2.rows() && m1.cols() == m2.cols());
+        MatCompx RES(m1.rows(),m1.cols());
+        std::transform(m1.begin(),m1.end(),m2.begin(),RES.begin(),[](const auto &c,const auto &r){return c + r;});
+        return RES;
+    }
+    inline MatCompx operator-(const MatCompx &m1,const MatDoub &m2){
+        assert(m1.rows() == m2.rows() && m1.cols() == m2.cols());
+        MatCompx RES(m1.rows(),m1.cols());
+        std::transform(m1.begin(),m1.end(),m2.begin(),RES.begin(),[](const auto &c,const auto &r){return c - r;});
+        return RES;
+    }
 
 
 

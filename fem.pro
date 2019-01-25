@@ -32,7 +32,11 @@ HEADERS += \
     mesh.h \
     ndimmatrix/matrix.h \
     ndimmatrix/matrix_impl.h \
-    element.h
+    element.h \
+    gaussian_cuadrature.h \
+    fononic_fem.h \
+    fem.h \
+    utilities.h
 
 unix {
     target.path = /usr/lib

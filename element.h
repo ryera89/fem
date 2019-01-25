@@ -5,13 +5,7 @@
 #include "ndimmatrix/matrix.h"
 #include <array>
 
-//TODO: mover luego a matrix.h
-typedef Matrix<uint32_t,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatUint32;
-typedef Matrix<double,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatDoub;
-typedef Matrix<double,1,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> VecDoub;
-typedef Matrix<std::complex<double>,2,Matrix_Type::GEN,Matrix_Storage_Scheme::FULL> MatCompx;
-typedef std::complex<double> complex;
-typedef Matrix<complex,2,Matrix_Type::HER,Matrix_Storage_Scheme::UPP> HMatCompx;
+
 
 enum class ELEMENT_TYPE{TRI3,QUAD4};
 
