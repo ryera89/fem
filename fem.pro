@@ -19,7 +19,8 @@ SOURCES += \
         main.cpp \
     mesh_generation.cpp \
     mesh.cpp \
-    ndimmatrix/matrix.cpp
+    ndimmatrix/matrix.cpp \
+    ndimmatrix/vector.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -36,7 +37,9 @@ HEADERS += \
     gaussian_cuadrature.h \
     fononic_fem.h \
     fem.h \
-    utilities.h
+    utilities.h \
+    ndimmatrix/sparse_matrix_utils.h \
+    ndimmatrix/vector.h
 
 unix {
     target.path = /usr/lib
