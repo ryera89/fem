@@ -2,6 +2,7 @@
 #define UTILITIES_H
 
 #include "ndimmatrix/matrix.h"
+#include "mesh.h"
 
 typedef Matrix<double,1> VecDoub;
 typedef Matrix<double,2> MatDoub;
@@ -63,5 +64,151 @@ inline double det_2x2_Matrix(const MatDoub &A){
     assert(A.rows() == 2 && A.cols() == 2);
     return A(0,0)*A(1,1) - A(1,0)*A(0,1);
 }
+
+typedef Matrix<double,2,MATRIX_TYPE::CSR> Sparse_MatDoub;
+typedef Matrix<complexd,2,MATRIX_TYPE::CSR> Sparse_MatComplexd;
+
+template<typename T>
+struct indexs_val{
+    uint32_t row;
+    uint32_t col;
+    T val;
+    indexs_val() = default;
+    indexs_val(uint32_t r,uint32_t c,T v):row(r),col(c),val(v){}
+};
+template<typename T>
+inline bool operator == (const indexs_val<T> &iv1,const indexs_val<T> &iv2){return (iv1.row == iv2.row && iv1.col == iv2.col);}
+template<typename T>
+inline bool operator != (const indexs_val<T> &iv1,const indexs_val<T> &iv2){return !(iv1 == iv2);}
+template<typename T>
+inline bool operator < (const indexs_val<T> &iv1,const indexs_val<T> &iv2){
+    return ((iv1.row < iv2.row) || (iv1.row == iv2.row && iv1.col < iv2.col));
+}
+template<typename T>
+inline bool operator > (const indexs_val<T> &iv1,const indexs_val<T> &iv2){
+    return ((iv1.row > iv2.row) || (iv1.row == iv2.row && iv1.col > iv2.col));
+}
+template<typename T>
+inline bool operator <= (const indexs_val<T> &iv1,const indexs_val<T> &iv2){
+    return (iv1 < iv2 || iv1 == iv2);
+}
+template<typename T>
+inline bool operator >= (const indexs_val<T> &iv1,const indexs_val<T> &iv2){
+    return (iv1 > iv2 || iv1 == iv2);
+}
+template<typename T,MATRIX_TYPE matrix_type>
+std::vector<indexs_val<T>> index_val_table(const rectangular_mesh<ELEMENT_TYPE::QUAD4> &mesh,const Matrix<T,2,matrix_type> &Kelem,
+                                           size_t elem_indx){
+    assert(elem_indx < mesh.m_element_connect.rows());
+    uint32_t nodxelem = mesh.m_element_connect.cols(); //numero nodos por elemento
+    uint32_t dofxelem = mesh.m_dofxnode*nodxelem; //numero de dof por elemento
+    assert(dofxelem == Kelem.rows());
+
+    std::vector<indexs_val<T>> v_table;
+    v_table.reserve(dofxelem*dofxelem); //TODO implementar eso para casos simetrico y hermitico
+
+    std::vector<uint32_t> vrowsdofsxelems;
+    vrowsdofsxelems.reserve(dofxelem);
+    if (mesh.m_dofxnode == 2){
+        for (size_t i = 0; i < nodxelem; ++i){
+            vrowsdofsxelems.push_back(2*mesh.m_element_connect(elem_indx,i));
+            vrowsdofsxelems.push_back(2*mesh.m_element_connect(elem_indx,i) + 1);
+        }
+    }else{
+        throw ("index_val_table: error solo implementado para 2 dof por nodo");
+    }
+    for (size_t i = 0; i < vrowsdofsxelems.size(); ++i){
+        for (size_t j = 0; j < vrowsdofsxelems.size(); ++j){
+            indexs_val<T> tmp(vrowsdofsxelems[i],vrowsdofsxelems[j],Kelem(i,j));
+            v_table.emplace_back(tmp);
+        }
+    }
+    return v_table;
+}
+
+
+Sparse_MatComplexd Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<complexd> &vvals,
+                          uint32_t nrow,uint32_t ncol){
+
+    assert(vrows.size() == vcols.size() && vrows.size() == vvals.size());
+
+    if (vrows.size() == 0) return Sparse_MatComplexd();
+
+    std::vector<indexs_val<complexd>> vIndxValsTable(1,indexs_val<complexd>(vrows[0],vcols[0],vvals[0]));
+    for (size_t ii = 1; ii < vrows.size(); ++ii){
+        indexs_val<complexd> tmp(vrows[ii],vcols[ii],vvals[ii]);
+
+        auto iter = std::find(vIndxValsTable.begin(),vIndxValsTable.end(),tmp);
+        if (iter != vIndxValsTable.end()) iter->val+=tmp.val; //sumando aportes de distintos elementos al mismo nodo
+        else vIndxValsTable.push_back(tmp); //sino esta el nodo se agrega
+    }
+
+    std::sort(vIndxValsTable.begin(),vIndxValsTable.end()); //se ordena la lista con privilegio de filas
+
+    uint32_t nvals = vIndxValsTable.size();
+    std::vector<complexd> values(nvals);
+    std::vector<uint32_t> cols(nvals);
+    std::vector<uint32_t> row_start(nrow);
+    std::vector<uint32_t> row_end(nrow);
+    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
+    uint32_t curr_row = 0;
+    for (uint32_t i = 0; i < nvals; ++i){
+        values[i] = vIndxValsTable[i].val;
+        cols[i] = vIndxValsTable[i].col;
+        curr_row = vIndxValsTable[i].row;
+        if (curr_row != tmprow){ //primer elemento de la fila
+            row_start[curr_row] = i;
+            tmprow = curr_row;
+            if (i != 0){ //fin de la fila anterior
+                row_end[curr_row-1] = i;
+            }
+        }
+    }
+    row_end[nrow-1] = nvals;
+
+    return Sparse_MatComplexd(nrow,ncol,row_start,row_end,cols,values);
+}
+
+Sparse_MatDoub Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<double> &vvals,
+                      uint32_t nrow,uint32_t ncol){
+
+    assert(vrows.size() == vcols.size() && vrows.size() == vvals.size());
+
+    if (vrows.size() == 0) return Sparse_MatDoub();
+
+    std::vector<indexs_val<double>> vIndxValsTable(1,indexs_val<double>(vrows[0],vcols[0],vvals[0]));
+    for (size_t ii = 1; ii < vrows.size(); ++ii){
+        indexs_val<double> tmp(vrows[ii],vcols[ii],vvals[ii]);
+
+        auto iter = std::find(vIndxValsTable.begin(),vIndxValsTable.end(),tmp);
+        if (iter != vIndxValsTable.end()) iter->val+=tmp.val; //sumando aportes de distintos elementos al mismo nodo
+        else vIndxValsTable.push_back(tmp); //sino esta el nodo se agrega
+    }
+
+    std::sort(vIndxValsTable.begin(),vIndxValsTable.end()); //se ordena la lista con privilegio de filas
+
+    uint32_t nvals = vIndxValsTable.size();
+    std::vector<double> values(nvals);
+    std::vector<uint32_t> cols(nvals);
+    std::vector<uint32_t> row_start(nrow);
+    std::vector<uint32_t> row_end(nrow);
+    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
+    uint32_t curr_row = 0;
+    for (uint32_t i = 0; i < nvals; ++i){
+        values[i] = vIndxValsTable[i].val;
+        cols[i] = vIndxValsTable[i].col;
+        curr_row = vIndxValsTable[i].row;
+        if (curr_row != tmprow){ //primer elemento de la fila
+            row_start[curr_row] = i;
+            tmprow = curr_row;
+            if (i != 0){ //fin de la fila anterior
+                row_end[curr_row-1] = i;
+            }
+        }
+    }
+    row_end[nrow-1] = nvals;
+    return Sparse_MatDoub(nrow,ncol,row_start,row_end,cols,values);
+}
+
 
 #endif // UTILITIES_H

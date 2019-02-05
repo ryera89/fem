@@ -1720,6 +1720,11 @@ inline Matrix<complexd,N> operator+(const Matrix<double,N> &m,const Matrix<compl
     Matrix<complexd,N> r(cm);
     return r+=m;
 }
+//template<size_t N>
+//inline Matrix<complexd,N> operator+(const Matrix<double,N> &&m,const Matrix<complexd,N> &cm){
+//    Matrix<complexd,N> r(cm);
+//    return r+=m;
+//}
 template<size_t N>
 inline Matrix<complexd,N> operator+(const Matrix<double,N> &m,Matrix<complexd,N> &&cm){
     Matrix<complexd,N> r(cm);
@@ -1743,6 +1748,14 @@ inline Matrix<complexd,N> operator-(const Matrix<double,N> &m,const Matrix<compl
     std::transform(m.begin(),m.end(),r.begin(),r.begin(),[](const auto &v1,const auto &v2){return v1-v2;});
     return r;
 }
+//template<size_t N>
+//inline Matrix<complexd,N> operator-(const Matrix<double,N> &&m,const Matrix<complexd,N> &cm){
+//    assert(std::equal(m.descriptor().m_extents.begin(),m.descriptor().m_extents.end(),
+//                      cm.descriptor().m_extents.begin(),cm.descriptor().m_extents.end()));
+//    Matrix<complexd,N> r(cm);
+//    std::transform(m.begin(),m.end(),r.begin(),r.begin(),[](const auto &v1,const auto &v2){return v1-v2;});
+//    return r;
+//}
 template<size_t N>
 inline Matrix<complexd,N> operator-(const Matrix<double,N> &m,Matrix<complexd,N> &&cm){
     assert(std::equal(m.descriptor().m_extents.begin(),m.descriptor().m_extents.end(),

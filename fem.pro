@@ -38,7 +38,8 @@ HEADERS += \
     fem.h \
     utilities.h \
     ndimmatrix/matrix_ref.h \
-    ndimmatrix/matrix_slice.h
+    ndimmatrix/matrix_slice.h \
+    material.h
 
 unix {
     target.path = /usr/lib
