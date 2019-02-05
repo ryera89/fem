@@ -11,6 +11,7 @@ struct rectangular_mesh
     static constexpr ELEMENT_TYPE element_type = etype;
 
     uint32_t dofxnode; //grados de libertad por elemento
+    uint32_t nodes_number;
     uint32_t element_number;
     double x_lenght;
     double y_lenght;
@@ -33,6 +34,11 @@ struct rectangular_mesh
 
     void split_mesh_nodes_and_dof();
 
+    bool is_corner_node(const QPointF &coor,double xtoler,double ytoler,double xmin,double xmax,double ymin,double ymax);
+    bool is_right_edge_node(const QPointF &coor,double xtoler,double ytoler,double xmin,double xmax,double ymin,double ymax);
+    bool is_top_edge_node(const QPointF &coor,double xtoler,double ytoler,double xmin,double xmax,double ymin,double ymax);
+    bool is_bottom_edge_node(const QPointF &coor,double xtoler,double ytoler,double xmin,double xmax,double ymin,double ymax);
+    bool is_left_edge_node(const QPointF &coor,double xtoler,double ytoler,double xmin,double xmax,double ymin,double ymax);
     /*
      * Lx: longitud en direccion x;
      * Ly: longitud en direccion y
