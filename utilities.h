@@ -3,6 +3,9 @@
 
 #include "ndimmatrix/matrix.h"
 
+typedef Matrix<double,1> VecDoub;
+typedef Matrix<double,2> MatDoub;
+
 inline std::tuple<MatDoub,double> inv_det_2x2_Matrix(const MatDoub &A){
     assert(A.rows() == 2 && A.cols() == 2);
     const double a = A(0,0);

@@ -1,10 +1,8 @@
 #include "mesh.h"
 
 template <>
-rectangular_mesh<ELEMENT_TYPE::QUAD4>::rectangular_mesh(double Lx, double Ly, uint32_t Nx, uint32_t Ny):element_number(Nx*Ny),
-                                                                                                          x_lenght(Lx),y_lenght(Ly),
-                                                                                                          nodes_coordinates((Nx+1)*(Ny+1)),
-                                                                                                          element_connect(element_number,4)
+rectangular_mesh<ELEMENT_TYPE::QUAD4>::rectangular_mesh(double Lx, double Ly, uint32_t Nx, uint32_t Ny):
+    element_number(Nx*Ny),x_lenght(Lx),y_lenght(Ly),nodes_coordinates((Nx+1)*(Ny+1)),element_connect(element_number,4)
 {
     double dx = Lx/Nx;
     double dy = Ly/Ny;
@@ -99,6 +97,20 @@ rectangular_mesh<ELEMENT_TYPE::TRI3>::rectangular_mesh(double Lx, double Ly, uin
         }
     }
 
+}
+
+template<ELEMENT_TYPE etype>
+void rectangular_mesh<etype>::split_mesh_nodes_and_dof()
+{
+    auto [ixmin,ixmax] = std::minmax_element(nodes_coordinates.begin(),nodes_coordinates.end(),
+            [](const QPointF &v1,const QPointF &v2){return v1.x() < v2.x();});
+    auto [iymin,iymax] = std::minmax_element(nodes_coordinates.begin(),nodes_coordinates.end(),
+            [](const QPointF &v1,const QPointF &v2){return v1.y() < v2.y();});
+
+    double xmin = ixmin->x();
+    double xmax =  ixmax->x();
+    double ymin = *iymin->y();
+    double ymax = *iymax->y();
 }
 
 //template<ELEMENT_TYPE etype>

@@ -3,6 +3,7 @@
 #include "mesh_generation.h"
 #include "iostream"
 #include "mesh.h"
+#include "fem.h"
 
 int main(int argc, char *argv[])
 {

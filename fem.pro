@@ -19,8 +19,7 @@ SOURCES += \
         main.cpp \
     mesh_generation.cpp \
     mesh.cpp \
-    ndimmatrix/matrix.cpp \
-    ndimmatrix/vector.cpp
+    ndimmatrix/matrix.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -38,8 +37,8 @@ HEADERS += \
     fononic_fem.h \
     fem.h \
     utilities.h \
-    ndimmatrix/sparse_matrix_utils.h \
-    ndimmatrix/vector.h
+    ndimmatrix/matrix_ref.h \
+    ndimmatrix/matrix_slice.h
 
 unix {
     target.path = /usr/lib

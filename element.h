@@ -6,6 +6,8 @@
 #include <array>
 
 
+typedef Matrix<double,1> VecDoub;
+typedef Matrix<double,2> MatDoub;
 
 enum class ELEMENT_TYPE{TRI3,QUAD4};
 
