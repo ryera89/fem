@@ -18,10 +18,11 @@ inline MatComplexd fononic_Bimag(const VecDoub &N,const VecDoub &k){ //imaginary
     }
     return TMP;
 }
-inline std::vector<HMatComplexd> fononic_elemental_stiffness_matrix(const VecDoub &Xe,isotropic_material mat1,isotropic_material mat2,
-                                                                    const VecDoub &k,const gaussian_cuadrature &g_cuad,
-                                                                    const rectangular_mesh<ELEMENT_TYPE::QUAD4> &mesh,
-                                                                    VecDoub (*shapeFun)(QPointF p),MatDoub (*shapeFunDer)(QPointF p)){
+inline Sparse_MatComplexd fononic_elemental_stiffness_matrix(const VecDoub &Xe,isotropic_material mat1,isotropic_material mat2,
+                                                             const VecDoub &k,const gaussian_cuadrature &g_cuad,
+                                                             const rectangular_mesh<ELEMENT_TYPE::QUAD4> &mesh,
+                                                             VecDoub (*shapeFun)(const QPointF &p),
+                                                             MatDoub (*shapeFunDer)(const QPointF &p)){
     /* Input
      * Xe: vector de variables de disenho
      * mat1 y mat2 materiales limites de disenho del material
@@ -39,6 +40,7 @@ inline std::vector<HMatComplexd> fononic_elemental_stiffness_matrix(const VecDou
     size_t nodxelem = mesh.m_element_connect.cols(); //numero de nodos por elemento
     size_t dofxelem = mesh.m_dofxnode*nodxelem; // numero de dof por elemento
     size_t ipoints = g_cuad.gauss_points_number; //puntos de integracion
+    uint32_t nrow = mesh.m_dofxnode*mesh.m_nodes_coordinates.size(); //numero de nodos x dofxnodo
     //numeros de elementos y dimension 2D
     assert(mesh.m_element_connect.rows() == nelem && dim == 2 && nodxelem == g_cuad.nodxelem);
     //std::vector<HMatComplexd> v_Kelem(nelem,HMatComplexd(dofxelem,complexd(0,0)));
@@ -85,35 +87,51 @@ inline std::vector<HMatComplexd> fononic_elemental_stiffness_matrix(const VecDou
             }
         }
     }
-    return v_Kelem;
+    return Sparse(v_index_val_table,nrow,nrow);
 }
-inline std::vector<SMatDoub> fononic_elemental_mass_matrix(const VecDoub &rho,const std::vector<MatDoub> &v_ecoord,
-                                                          const gaussian_cuadrature &g_cuad,VecDoub (*shapeFun)(QPointF p),
-                                                          MatDoub (*shapeFunDer)(QPointF p)){
-    assert(rho.size() == v_ecoord.size());
-    size_t nelem = rho.size();
-    uint32_t nodxelem = g_cuad.nodxelem;
-    uint32_t ipoints = g_cuad.gauss_points_number;
-    std::vector<SMatDoub> v_Melem(nelem,SMatDoub(nodxelem)); //TODO ver si esto se incializa a
-    for (uint32_t i = 0; i < ipoints; ++i){
+inline Matrix<double,2,MATRIX_TYPE::CSR> fononic_elemental_mass_matrix(const VecDoub &Xe,isotropic_material mat1,isotropic_material mat2,
+                                                           const VecDoub &k,const gaussian_cuadrature &g_cuad,
+                                                           const rectangular_mesh<ELEMENT_TYPE::QUAD4> &mesh,
+                                                           VecDoub (*shapeFun)(QPointF p),MatDoub (*shapeFunDer)(QPointF p)){
+    //assert(rho.size() == v_ecoord.size());
+    size_t nelem = Xe.size();
+    size_t nodxelem = mesh.m_element_connect.cols(); //numero de nodos por elemento
+    size_t dofxelem = mesh.m_dofxnode*nodxelem; // numero de dof por elemento
+    size_t ipoints = g_cuad.gauss_points_number; //puntos de integracion
+    uint32_t nrow = mesh.m_dofxnode*mesh.m_nodes_coordinates.size(); //numero de nodos x dofxnodo
+     assert(mesh.m_element_connect.rows() == nelem && nodxelem == g_cuad.nodxelem);
+    //std::vector<SMatDoub> v_Melem(nelem,SMatDoub(nodxelem)); //TODO ver si esto se incializa a
+     SMatDoub Melem(dofxelem);
+     std::vector<indexs_val<double>> v_index_val_table;
+     for (uint32_t i = 0; i < ipoints; ++i){
         QPointF p = g_cuad.gauss_points[i];
         double w = g_cuad.weights[i];
         VecDoub N = shapeFun(p); //shape functions
         MatDoub dN = shapeFunDer(p); //shape functions derivatives
         assert(N.size() == nodxelem && dN.cols() == nodxelem && dN.rows() == 2);
         for (size_t j = 0; j < nelem; ++j){
-            double erho = rho(j);
-            MatDoub JT = dN*v_ecoord[j];
+            MatDoub MCOOR = element_vnodes_coordinates(mesh,j);
+            MatDoub JT = dN*MCOOR;
             double detJT = det_2x2_Matrix(JT);
-            double tmp = w*erho*detJT;
+            double rho = Xe(j)*mat1.m_rho + (1-Xe(j))*mat2.m_rho;
+            double tmp = w*rho*detJT;
             for (size_t m = 0; m < nodxelem; ++m){
                 for (size_t n = m; n < nodxelem; ++n){
-                    v_Melem[i](m,n) += tmp*N(m)*N(n);
+                    double tmpval = tmp*N(m)*N(n);
+                    Melem(2*m,2*n) = tmpval;
+                    Melem(2*m+1,2*n+1) = tmpval;
                 }
+            }
+            std::vector<indexs_val<double>> v_table = index_val_table(mesh,Melem,j);
+
+            for (auto &indxval:v_table){
+                auto iter = std::find(v_index_val_table.begin(),v_index_val_table.end(),indxval);
+                if (iter != v_index_val_table.end()) iter->val+=indxval.val; //sumando aportes de distintos elementos al mismo nodo
+                else v_index_val_table.push_back(indxval); //sino esta el nodo se agrega
             }
         }
     }
-    return v_Melem;
+    return Sparse(v_index_val_table,nrow,nrow);
 }
 template<typename T,ELEMENT_TYPE etype>
 inline Matrix<T,2,MATRIX_TYPE::CSR> fononic_reduced_system(const Matrix<T,2,MATRIX_TYPE::CSR> &K,const rectangular_mesh<etype> &mesh){

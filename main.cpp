@@ -3,7 +3,7 @@
 #include "mesh_generation.h"
 #include "iostream"
 #include "mesh.h"
-#include "fem.h"
+#include "fononic_fem.h"
 
 using namespace std;
 
@@ -90,6 +90,31 @@ for (auto &dof:quad4_mesh.m_interior_dof) cout << dof << "\n";
 //std::cout << z2 << "\n";
 
 //std::cout << 7/2 << "\n";
+double E1 = 1;
+double E2 = 200;
+double pois = 0.3;
+double lamda1 = E1*pois/((1+pois)*(1-2*pois));
+double mu1 = E1/(2*(1+pois));
+double rho1 = 2;
+double lamda2 = E2*pois/((1+pois)*(1-2*pois));
+double mu2 = E2/(2*(1+pois));
+double rho2 = 2;
+
+isotropic_material mat1(lamda1,mu1,rho1);
+isotropic_material mat2(lamda2,mu2,rho2);
+
+rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,30,30);
+micro_cell_mesh.split_mesh_nodes_and_dof();
+
+VecDoub k = {0,0};
+
+VecDoub Xe(micro_cell_mesh.m_element_number);
+Xe = 0.01;
+
+gaussian_cuadrature gcuad(ELEMENT_TYPE::QUAD4);
+
+Matrix<complexd,2,MATRIX_TYPE::CSR> K = fononic_elemental_stiffness_matrix(Xe,mat1,mat2,k,gcuad,micro_cell_mesh,quad4_master_element_shape_functions
+                                                                           ,quad4_master_element_shape_functions_gradient);
 
 return a.exec();
 }

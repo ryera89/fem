@@ -125,9 +125,33 @@ std::vector<indexs_val<T>> index_val_table(const rectangular_mesh<ELEMENT_TYPE::
     }
     return v_table;
 }
+template<typename T>
+inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(const std::vector<indexs_val<T>> &v_indx_table,uint32_t nrow,uint32_t ncol){
+    std::sort(v_indx_table.begin(),v_indx_table.end());
+    size_t nvals = v_indx_table.size();
+    std::vector<complexd> values(nvals);
+    std::vector<uint32_t> cols(nvals);
+    std::vector<uint32_t> row_start(nrow);
+    std::vector<uint32_t> row_end(nrow);
+    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
+    uint32_t curr_row = 0;
+    for (uint32_t i = 0; i < nvals; ++i){
+        values[i] = v_indx_table[i].val;
+        cols[i] = v_indx_table[i].col;
+        curr_row = v_indx_table[i].row;
+        if (curr_row != tmprow){ //primer elemento de la fila
+            row_start[curr_row] = i;
+            tmprow = curr_row;
+            if (i != 0){ //fin de la fila anterior
+                row_end[curr_row-1] = i;
+            }
+        }
+    }
+    row_end[nrow-1] = nvals;
 
-
-Sparse_MatComplexd Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<complexd> &vvals,
+    return Matrix<T,2,MATRIX_TYPE::CSR>(nrow,ncol,row_start,row_end,cols,values);
+}
+inline Sparse_MatComplexd Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<complexd> &vvals,
                           uint32_t nrow,uint32_t ncol){
 
     assert(vrows.size() == vcols.size() && vrows.size() == vvals.size());
