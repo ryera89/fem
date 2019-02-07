@@ -1157,20 +1157,17 @@ public:
     uint32_t rows() const{return m_rows;}
     uint32_t cols() const{return m_cols;}
 
+
     void printData(){
-        printf("values: ( ");
-        for (auto &vals : m_elems) std::cout  << vals << " ";
-        printf(") \n");
-        printf("column: ( ");
-        for (auto &vals : m_columns) std::cout << vals << " ";
-        printf(") \n");
-        printf("pointerB: ( ");
-        for (auto &vals : m_rows_start) std::cout <<  vals << " ";
-        printf(") \n");
-        printf("pointerE: ( ");
-        for (auto &vals : m_rows_end) std::cout << vals << " ";
-        printf(") \n");
+        for (size_t i = 0; i < m_rows_start.size(); ++i){
+            uint32_t beg = m_rows_start[i];
+            uint32_t end = m_rows_end[i];
+            for (;beg<end;++beg){
+                std::cout << "(" << i << "," <<m_columns[beg] << ") " << m_elems[beg] << "\n";
+            }
+        }
     }
+
     auto values() const{return m_elems;}
     auto columns() const{return m_columns;}
     auto row_start() const{return m_rows_start;}
@@ -1710,11 +1707,11 @@ inline Matrix<complexd,N> operator+(const Matrix<complexd,N> &cm,const Matrix<do
     Matrix<complexd,N> r(cm);
     return r+=m;
 }
-template<size_t N>
-inline Matrix<complexd,N> operator+(Matrix<complexd,N> &&cm,const Matrix<double,N> &m){
-    Matrix<complexd,N> r(cm);
-    return r+=m;
-}
+//template<size_t N>
+//inline Matrix<complexd,N> operator+(Matrix<complexd,N> &&cm,const Matrix<double,N> &m){
+//    Matrix<complexd,N> r(cm);
+//    return r+=m;
+//}
 template<size_t N>
 inline Matrix<complexd,N> operator+(const Matrix<double,N> &m,const Matrix<complexd,N> &cm){
     Matrix<complexd,N> r(cm);
@@ -1725,21 +1722,21 @@ inline Matrix<complexd,N> operator+(const Matrix<double,N> &m,const Matrix<compl
 //    Matrix<complexd,N> r(cm);
 //    return r+=m;
 //}
-template<size_t N>
-inline Matrix<complexd,N> operator+(const Matrix<double,N> &m,Matrix<complexd,N> &&cm){
-    Matrix<complexd,N> r(cm);
-    return r+=m;
-}
+//template<size_t N>
+//inline Matrix<complexd,N> operator+(const Matrix<double,N> &m,Matrix<complexd,N> &&cm){
+//    Matrix<complexd,N> r(cm);
+//    return r+=m;
+//}
 template<size_t N>
 inline Matrix<complexd,N> operator-(const Matrix<complexd,N> &cm,const Matrix<double,N> &m){
     Matrix<complexd,N> r(cm);
     return r-=m;
 }
-template<size_t N>
-inline Matrix<complexd,N> operator-(Matrix<complexd,N> &&cm,const Matrix<double,N> &m){
-    Matrix<complexd,N> r(cm);
-    return r-=m;
-}
+//template<size_t N>
+//inline Matrix<complexd,N> operator-(Matrix<complexd,N> &&cm,const Matrix<double,N> &m){
+//    Matrix<complexd,N> r(cm);
+//    return r-=m;
+//}
 template<size_t N>
 inline Matrix<complexd,N> operator-(const Matrix<double,N> &m,const Matrix<complexd,N> &cm){
     assert(std::equal(m.descriptor().m_extents.begin(),m.descriptor().m_extents.end(),
@@ -1756,14 +1753,14 @@ inline Matrix<complexd,N> operator-(const Matrix<double,N> &m,const Matrix<compl
 //    std::transform(m.begin(),m.end(),r.begin(),r.begin(),[](const auto &v1,const auto &v2){return v1-v2;});
 //    return r;
 //}
-template<size_t N>
-inline Matrix<complexd,N> operator-(const Matrix<double,N> &m,Matrix<complexd,N> &&cm){
-    assert(std::equal(m.descriptor().m_extents.begin(),m.descriptor().m_extents.end(),
-                      cm.descriptor().m_extents.begin(),cm.descriptor().m_extents.end()));
-    Matrix<complexd,N> r(cm);
-    std::transform(m.begin(),m.end(),r.begin(),r.begin(),[](const auto &v1,const auto &v2){return v1-v2;});
-    return r;
-}
+//template<size_t N>
+//inline Matrix<complexd,N> operator-(const Matrix<double,N> &m,Matrix<complexd,N> &&cm){
+//    assert(std::equal(m.descriptor().m_extents.begin(),m.descriptor().m_extents.end(),
+//                      cm.descriptor().m_extents.begin(),cm.descriptor().m_extents.end()));
+//    Matrix<complexd,N> r(cm);
+//    std::transform(m.begin(),m.end(),r.begin(),r.begin(),[](const auto &v1,const auto &v2){return v1-v2;});
+//    return r;
+//}
 
 /*****************************************************************************/
 /******************************sparse matrix operations************************/

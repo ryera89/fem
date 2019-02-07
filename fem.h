@@ -26,13 +26,13 @@ inline std::vector<MatDoub> elemental_shape_functions_derivatives(const MatDoub 
 template<ELEMENT_TYPE etype>
 inline MatDoub element_vnodes_coordinates(const rectangular_mesh<etype> &mesh,size_t element_number){
 
-    size_t nvnodes = mesh.element_connect.cols();
+    size_t nvnodes = mesh.m_element_connect.cols();
     MatDoub ecoord(nvnodes,2); //2D
 
     for (size_t i = 0; i < nvnodes; ++i){
-        uint32_t node_id = mesh.element_connect(element_number,i);
-        ecoord(i,0) = mesh.nodes_coordinates[node_id].x();
-        ecoord(i,1) = mesh.nodes_coordinates[node_id].y();
+        uint32_t node_id = mesh.m_element_connect(element_number,i);
+        ecoord(i,0) = mesh.m_nodes_coordinates[node_id].x();
+        ecoord(i,1) = mesh.m_nodes_coordinates[node_id].y();
     }
 
     return ecoord;

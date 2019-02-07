@@ -93,18 +93,20 @@ for (auto &dof:quad4_mesh.m_interior_dof) cout << dof << "\n";
 double E1 = 1;
 double E2 = 200;
 double pois = 0.3;
-double lamda1 = E1*pois/((1+pois)*(1-2*pois));
-double mu1 = E1/(2*(1+pois));
+//double lamda1 = E1*pois/((1+pois)*(1-2*pois));
+//double mu1 = E1/(2*(1+pois));
 double rho1 = 2;
-double lamda2 = E2*pois/((1+pois)*(1-2*pois));
-double mu2 = E2/(2*(1+pois));
+//double lamda2 = E2*pois/((1+pois)*(1-2*pois));
+//double mu2 = E2/(2*(1+pois));
 double rho2 = 2;
 
-isotropic_material mat1(lamda1,mu1,rho1);
-isotropic_material mat2(lamda2,mu2,rho2);
+isotropic_material mat1(E1,pois,rho1);
+isotropic_material mat2(E2,pois,rho2);
 
-rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,30,30);
+rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,2,2);
 micro_cell_mesh.split_mesh_nodes_and_dof();
+
+//cout << micro_cell_mesh.m_element_connect << endl;
 
 VecDoub k = {0,0};
 
@@ -113,8 +115,20 @@ Xe = 0.01;
 
 gaussian_cuadrature gcuad(ELEMENT_TYPE::QUAD4);
 
+auto start = std::chrono::high_resolution_clock::now();
 Matrix<complexd,2,MATRIX_TYPE::CSR> K = fononic_elemental_stiffness_matrix(Xe,mat1,mat2,k,gcuad,micro_cell_mesh,quad4_master_element_shape_functions
                                                                            ,quad4_master_element_shape_functions_gradient);
+auto end = std::chrono::high_resolution_clock::now();
+auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
+printf("ElapsedTime[sec] = %u \n",elapsed);
+cout << "Assembly completed \n";
+cout << K.values().size() << "\n";
+cout << K.rows() << "\n";
+K.printData();
+Matrix<double,2,MATRIX_TYPE::CSR> M = fononic_elemental_mass_matrix(Xe,mat1,mat2,k,gcuad,micro_cell_mesh,quad4_master_element_shape_functions
+                                                                    ,quad4_master_element_shape_functions_gradient);
+
+M.printData();
 
 return a.exec();
 }

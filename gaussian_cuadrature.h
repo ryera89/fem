@@ -15,7 +15,7 @@ struct gaussian_cuadrature{
         case ELEMENT_TYPE::QUAD4:{
             gauss_points_number = 4;
             nodxelem = 4;
-            std::vector<QPointF> gauss_points = {QPointF(-1/std::sqrt(3),-1/std::sqrt(3)),
+            gauss_points = {QPointF(-1/std::sqrt(3),-1/std::sqrt(3)),
                                                  QPointF(1/std::sqrt(3),-1/std::sqrt(3)),
                                                  QPointF(1/std::sqrt(3),1/std::sqrt(3)),
                                                  QPointF(-1/std::sqrt(3),1/std::sqrt(3))};

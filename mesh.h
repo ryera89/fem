@@ -41,21 +41,21 @@ struct rectangular_mesh
     {
         double dx = Lx/Nx;
         double dy = Ly/Ny;
-        for (uint32_t i = 0; i < Ny; ++i){
-            for (uint32_t j = 0 ; j < Nx; ++j){
-                uint32_t ii = i*Nx+j;
+        for (uint32_t i = 0; i < Nx; ++i){
+            for (uint32_t j = 0 ; j < Ny; ++j){
+                uint32_t ii = i*Ny+j;
                 m_element_connect(ii,0) = ii+i;
                 m_element_connect(ii,1) = ii+i+1;
-                m_element_connect(ii,2) = ii+i+Nx+1;
-                m_element_connect(ii,3) = ii+i+Nx+2;
+                m_element_connect(ii,2) = ii+i+Nx+2;
+                m_element_connect(ii,3) = ii+i+Nx+1;
 
             }
         }
-        for (uint32_t i = 0; i < Ny+1; ++i){
-            for (uint32_t j = 0 ; j < Nx+1; ++j){
-                uint32_t ii = i*(Nx+1) + j;
-                m_nodes_coordinates[ii].setX(j*dx);
-                m_nodes_coordinates[ii].setY(i*dy);
+        for (uint32_t i = 0; i < Nx+1; ++i){
+            for (uint32_t j = 0 ; j < Ny+1; ++j){
+                uint32_t ii = i*(Ny+1) + j;
+                m_nodes_coordinates[ii].setX(i*dx);
+                m_nodes_coordinates[ii].setY(Ly - j*dy);
             }
         }
 

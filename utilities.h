@@ -3,6 +3,7 @@
 
 #include "ndimmatrix/matrix.h"
 #include "mesh.h"
+#include <map>
 
 typedef Matrix<double,1> VecDoub;
 typedef Matrix<double,2> MatDoub;
@@ -68,6 +69,26 @@ inline double det_2x2_Matrix(const MatDoub &A){
 typedef Matrix<double,2,MATRIX_TYPE::CSR> Sparse_MatDoub;
 typedef Matrix<complexd,2,MATRIX_TYPE::CSR> Sparse_MatComplexd;
 
+struct index_pair{
+    uint32_t row;
+    uint32_t col;
+    index_pair() = default;
+    index_pair(uint32_t r,uint32_t c):row(r),col(c){}
+};
+inline bool operator == (const index_pair &iv1,const index_pair &iv2){return (iv1.row == iv2.row && iv1.col == iv2.col);}
+inline bool operator != (const index_pair &iv1,const index_pair &iv2){return !(iv1 == iv2);}
+inline bool operator < (const index_pair &iv1,const index_pair &iv2){
+    return ((iv1.row < iv2.row) || (iv1.row == iv2.row && iv1.col < iv2.col));
+}
+inline bool operator > (const index_pair &iv1,const index_pair &iv2){
+    return ((iv1.row > iv2.row) || (iv1.row == iv2.row && iv1.col > iv2.col));
+}
+inline bool operator <= (const index_pair &iv1,const index_pair &iv2){
+    return (iv1 < iv2 || iv1 == iv2);
+}
+inline bool operator >= (const index_pair &iv1,const index_pair &iv2){
+    return (iv1 > iv2 || iv1 == iv2);
+}
 template<typename T>
 struct indexs_val{
     uint32_t row;
@@ -75,6 +96,10 @@ struct indexs_val{
     T val;
     indexs_val() = default;
     indexs_val(uint32_t r,uint32_t c,T v):row(r),col(c),val(v){}
+    indexs_val(const indexs_val &other) = default;
+    indexs_val(indexs_val &&other) = default;
+    indexs_val& operator=(const indexs_val &other) = default;
+    indexs_val& operator=(indexs_val &&other) = default;
 };
 template<typename T>
 inline bool operator == (const indexs_val<T> &iv1,const indexs_val<T> &iv2){return (iv1.row == iv2.row && iv1.col == iv2.col);}
@@ -96,6 +121,104 @@ template<typename T>
 inline bool operator >= (const indexs_val<T> &iv1,const indexs_val<T> &iv2){
     return (iv1 > iv2 || iv1 == iv2);
 }
+//*********************************************************************************************************************
+template<typename T>
+inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(std::map<index_pair,T> &v_indx_table,uint32_t nrow,uint32_t ncol){
+    //std::sort(v_indx_table.begin(),v_indx_table.end());
+    size_t nvals = v_indx_table.size();
+    std::vector<T> values(nvals);
+    std::vector<uint32_t> cols(nvals);
+    std::vector<uint32_t> row_start(nrow);
+    std::vector<uint32_t> row_end(nrow);
+    //std::vector<T> values(nvals);
+    //std::vector<uint32_t> cols(nvals);
+    //std::vector<uint32_t> row_start(nrow);
+    //std::vector<uint32_t> row_end(nrow);
+    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
+    uint32_t curr_row = 0;
+    size_t i = 0;
+    for (auto &tmp:v_indx_table){
+        auto [index,val] = tmp;
+        //if (val == 0.0) continue;
+        values[i] = val;
+        cols[i] = index.col;
+        curr_row = index.row;
+        if (curr_row != tmprow){ //primer elemento de la fila
+            row_start[curr_row] = i;
+            tmprow = curr_row;
+            if (i != 0){ //fin de la fila anterior
+                row_end[curr_row-1] = i;
+            }
+        }
+        ++i;
+    }
+    row_end[nrow-1] = nvals;
+
+    return Matrix<T,2,MATRIX_TYPE::CSR>(nrow,ncol,row_start,row_end,cols,values);
+}
+template<typename T>
+inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(std::vector<indexs_val<T>> &v_indx_table,uint32_t nrow,uint32_t ncol){
+    std::sort(v_indx_table.begin(),v_indx_table.end());
+    size_t nvals = v_indx_table.size();
+    std::vector<T> values(nvals);
+    std::vector<uint32_t> cols(nvals);
+    std::vector<uint32_t> row_start(nrow);
+    std::vector<uint32_t> row_end(nrow);
+    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
+    uint32_t curr_row = 0;
+    for (uint32_t i = 0; i < nvals; ++i){
+        values[i] = v_indx_table[i].val;
+        cols[i] = v_indx_table[i].col;
+        curr_row = v_indx_table[i].row;
+        if (curr_row != tmprow){ //primer elemento de la fila
+            row_start[curr_row] = i;
+            tmprow = curr_row;
+            if (i != 0){ //fin de la fila anterior
+                row_end[curr_row-1] = i;
+            }
+        }
+    }
+    row_end[nrow-1] = nvals;
+
+    return Matrix<T,2,MATRIX_TYPE::CSR>(nrow,ncol,row_start,row_end,cols,values);
+}
+template<typename T,MATRIX_TYPE matrix_type>
+inline Matrix<T,2,MATRIX_TYPE::CSR> assembly(const rectangular_mesh<ELEMENT_TYPE::QUAD4> &mesh,const std::vector<Matrix<T,2,matrix_type>> &v_Kelem){
+
+    assert(mesh.m_dofxnode == 2);
+    uint32_t nelem = mesh.m_element_number;
+    uint32_t nodxelem = mesh.m_element_connect.cols(); //numero nodos por elemento
+    uint32_t dofxelem = mesh.m_dofxnode*nodxelem; //numero de dof por elemento
+    //std::vector<indexs_val<T>> v_table; //(dofxelem*dofxelem*nelem);
+    //v_table.reserve(dofxelem*dofxelem); //TODO implementar eso para casos simetrico y hermitico
+    std::map<index_pair,T> table;
+
+    std::vector<uint32_t> vrowsdofsxelems(dofxelem);
+    //vrowsdofsxelems.reserve(dofxelem);
+
+    for (size_t i = 0; i < nelem; ++i){
+        for (size_t ii = 0; ii < nodxelem; ++ii){
+            vrowsdofsxelems[2*ii] = 2*mesh.m_element_connect(i,ii);
+            vrowsdofsxelems[2*ii+1] = 2*mesh.m_element_connect(i,ii) + 1;
+        }
+        for (size_t ii = 0; ii < vrowsdofsxelems.size(); ++ii){
+            for (size_t jj = 0; jj < vrowsdofsxelems.size(); ++jj){
+                index_pair ptmp(vrowsdofsxelems[ii],vrowsdofsxelems[jj]);
+                T val = v_Kelem[i](ii,jj);
+                table[ptmp] += val;
+
+                //indexs_val<T> tmp(vrowsdofsxelems[ii],vrowsdofsxelems[jj],v_Kelem[i](ii,jj));
+
+                //auto iter = std::find(v_table.begin(),v_table.end(),tmp);
+                //if (iter != v_table.end()) (*iter).val+=tmp.val; //sumando aportes de distintos elementos al mismo nodo
+                //else v_table.emplace_back(tmp);  //sino esta el nodo se agrega
+            }
+        }
+    }
+    uint32_t nrow = mesh.m_dofxnode*mesh.m_nodes_number; //numero de nodos x dofxnodo
+    return Sparse(table,nrow,nrow);
+}
+//***********************************************************************************************************************
 template<typename T,MATRIX_TYPE matrix_type>
 std::vector<indexs_val<T>> index_val_table(const rectangular_mesh<ELEMENT_TYPE::QUAD4> &mesh,const Matrix<T,2,matrix_type> &Kelem,
                                            size_t elem_indx){
@@ -124,32 +247,6 @@ std::vector<indexs_val<T>> index_val_table(const rectangular_mesh<ELEMENT_TYPE::
         }
     }
     return v_table;
-}
-template<typename T>
-inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(const std::vector<indexs_val<T>> &v_indx_table,uint32_t nrow,uint32_t ncol){
-    std::sort(v_indx_table.begin(),v_indx_table.end());
-    size_t nvals = v_indx_table.size();
-    std::vector<complexd> values(nvals);
-    std::vector<uint32_t> cols(nvals);
-    std::vector<uint32_t> row_start(nrow);
-    std::vector<uint32_t> row_end(nrow);
-    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
-    uint32_t curr_row = 0;
-    for (uint32_t i = 0; i < nvals; ++i){
-        values[i] = v_indx_table[i].val;
-        cols[i] = v_indx_table[i].col;
-        curr_row = v_indx_table[i].row;
-        if (curr_row != tmprow){ //primer elemento de la fila
-            row_start[curr_row] = i;
-            tmprow = curr_row;
-            if (i != 0){ //fin de la fila anterior
-                row_end[curr_row-1] = i;
-            }
-        }
-    }
-    row_end[nrow-1] = nvals;
-
-    return Matrix<T,2,MATRIX_TYPE::CSR>(nrow,ncol,row_start,row_end,cols,values);
 }
 inline Sparse_MatComplexd Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<complexd> &vvals,
                           uint32_t nrow,uint32_t ncol){
