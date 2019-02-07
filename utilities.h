@@ -126,12 +126,14 @@ template<typename T>
 inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(std::map<index_pair,T> &v_indx_table,uint32_t nrow,uint32_t ncol){
     //std::sort(v_indx_table.begin(),v_indx_table.end());
     size_t nvals = v_indx_table.size();
-    std::vector<T> values(nvals);
-    std::vector<uint32_t> cols(nvals);
-    std::vector<uint32_t> row_start(nrow);
-    std::vector<uint32_t> row_end(nrow);
     //std::vector<T> values(nvals);
     //std::vector<uint32_t> cols(nvals);
+    std::vector<uint32_t> row_start(nrow);
+    std::vector<uint32_t> row_end(nrow);
+    std::vector<T> values;
+    values.reserve(nvals);
+    std::vector<uint32_t> cols;
+    cols.reserve(nvals);
     //std::vector<uint32_t> row_start(nrow);
     //std::vector<uint32_t> row_end(nrow);
     uint32_t tmprow = std::numeric_limits<uint32_t>::max();
@@ -139,9 +141,11 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(std::map<index_pair,T> &v_indx_table,
     size_t i = 0;
     for (auto &tmp:v_indx_table){
         auto [index,val] = tmp;
-        //if (val == 0.0) continue;
-        values[i] = val;
-        cols[i] = index.col;
+        if (val == T()) continue;
+        //values[i] = val;
+        values.push_back(val);
+        //cols[i] = index.col;
+        cols.push_back(index.col);
         curr_row = index.row;
         if (curr_row != tmprow){ //primer elemento de la fila
             row_start[curr_row] = i;
@@ -152,33 +156,65 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(std::map<index_pair,T> &v_indx_table,
         }
         ++i;
     }
-    row_end[nrow-1] = nvals;
+    //row_end[nrow-1] = nvals;
+    row_end[nrow-1] = values.size();
 
     return Matrix<T,2,MATRIX_TYPE::CSR>(nrow,ncol,row_start,row_end,cols,values);
 }
 template<typename T>
 inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(std::vector<indexs_val<T>> &v_indx_table,uint32_t nrow,uint32_t ncol){
     std::sort(v_indx_table.begin(),v_indx_table.end());
+
     size_t nvals = v_indx_table.size();
-    std::vector<T> values(nvals);
-    std::vector<uint32_t> cols(nvals);
+    std::vector<T> values;
+    values.reserve(nvals);
+    std::vector<uint32_t> cols;
+    cols.reserve(nvals);
     std::vector<uint32_t> row_start(nrow);
     std::vector<uint32_t> row_end(nrow);
     uint32_t tmprow = std::numeric_limits<uint32_t>::max();
     uint32_t curr_row = 0;
-    for (uint32_t i = 0; i < nvals; ++i){
-        values[i] = v_indx_table[i].val;
-        cols[i] = v_indx_table[i].col;
-        curr_row = v_indx_table[i].row;
-        if (curr_row != tmprow){ //primer elemento de la fila
-            row_start[curr_row] = i;
-            tmprow = curr_row;
-            if (i != 0){ //fin de la fila anterior
-                row_end[curr_row-1] = i;
+
+    indexs_val<T> tmp = v_indx_table[0];
+    T val = tmp.val;
+    //uint32_t row = 0;
+    for (size_t i = 1; i < nvals; ++i){
+        indexs_val<T> tmp1 = v_indx_table[i];
+        if (tmp == tmp1){
+            val += tmp1.val;
+        }else{
+            values.push_back(val);
+            cols.push_back(tmp.col);
+            curr_row = tmp.row;
+            tmp = tmp1;
+            val = tmp.val;
+            if (curr_row != tmprow){
+                if (tmprow != std::numeric_limits<uint32_t>::max()) row_end[curr_row-1] = values.size()-1;
+                row_start[curr_row] = values.size()-1;
+                tmprow = curr_row;
             }
         }
     }
-    row_end[nrow-1] = nvals;
+    values.push_back(val);
+    cols.push_back(tmp.col);
+    curr_row = tmp.row;
+//    if (curr_row != v_indx_table[nvals-1].row){
+
+//    }
+    row_end[nrow-1] = values.size();
+//    for (uint32_t i = 0; i < nvals; ++i){
+//        values[i] = v_indx_table[i].val;
+//        cols[i] = v_indx_table[i].col;
+//        curr_row = v_indx_table[i].row;
+//        if (curr_row != tmprow){ //primer elemento de la fila
+//            row_start[curr_row] = i;
+//            tmprow = curr_row;
+//            if (i != 0){ //fin de la fila anterior
+//                row_end[curr_row-1] = i;
+//            }
+//        }
+//    }
+//    row_end[nrow-1] = nvals;
 
     return Matrix<T,2,MATRIX_TYPE::CSR>(nrow,ncol,row_start,row_end,cols,values);
 }
@@ -248,88 +284,88 @@ std::vector<indexs_val<T>> index_val_table(const rectangular_mesh<ELEMENT_TYPE::
     }
     return v_table;
 }
-inline Sparse_MatComplexd Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<complexd> &vvals,
-                          uint32_t nrow,uint32_t ncol){
+//inline Sparse_MatComplexd Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<complexd> &vvals,
+//                          uint32_t nrow,uint32_t ncol){
 
-    assert(vrows.size() == vcols.size() && vrows.size() == vvals.size());
+//    assert(vrows.size() == vcols.size() && vrows.size() == vvals.size());
 
-    if (vrows.size() == 0) return Sparse_MatComplexd();
+//    if (vrows.size() == 0) return Sparse_MatComplexd();
 
-    std::vector<indexs_val<complexd>> vIndxValsTable(1,indexs_val<complexd>(vrows[0],vcols[0],vvals[0]));
-    for (size_t ii = 1; ii < vrows.size(); ++ii){
-        indexs_val<complexd> tmp(vrows[ii],vcols[ii],vvals[ii]);
+//    std::vector<indexs_val<complexd>> vIndxValsTable(1,indexs_val<complexd>(vrows[0],vcols[0],vvals[0]));
+//    for (size_t ii = 1; ii < vrows.size(); ++ii){
+//        indexs_val<complexd> tmp(vrows[ii],vcols[ii],vvals[ii]);
 
-        auto iter = std::find(vIndxValsTable.begin(),vIndxValsTable.end(),tmp);
-        if (iter != vIndxValsTable.end()) iter->val+=tmp.val; //sumando aportes de distintos elementos al mismo nodo
-        else vIndxValsTable.push_back(tmp); //sino esta el nodo se agrega
-    }
+//        auto iter = std::find(vIndxValsTable.begin(),vIndxValsTable.end(),tmp);
+//        if (iter != vIndxValsTable.end()) iter->val+=tmp.val; //sumando aportes de distintos elementos al mismo nodo
+//        else vIndxValsTable.push_back(tmp); //sino esta el nodo se agrega
+//    }
 
-    std::sort(vIndxValsTable.begin(),vIndxValsTable.end()); //se ordena la lista con privilegio de filas
+//    std::sort(vIndxValsTable.begin(),vIndxValsTable.end()); //se ordena la lista con privilegio de filas
 
-    uint32_t nvals = vIndxValsTable.size();
-    std::vector<complexd> values(nvals);
-    std::vector<uint32_t> cols(nvals);
-    std::vector<uint32_t> row_start(nrow);
-    std::vector<uint32_t> row_end(nrow);
-    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
-    uint32_t curr_row = 0;
-    for (uint32_t i = 0; i < nvals; ++i){
-        values[i] = vIndxValsTable[i].val;
-        cols[i] = vIndxValsTable[i].col;
-        curr_row = vIndxValsTable[i].row;
-        if (curr_row != tmprow){ //primer elemento de la fila
-            row_start[curr_row] = i;
-            tmprow = curr_row;
-            if (i != 0){ //fin de la fila anterior
-                row_end[curr_row-1] = i;
-            }
-        }
-    }
-    row_end[nrow-1] = nvals;
+//    uint32_t nvals = vIndxValsTable.size();
+//    std::vector<complexd> values(nvals);
+//    std::vector<uint32_t> cols(nvals);
+//    std::vector<uint32_t> row_start(nrow);
+//    std::vector<uint32_t> row_end(nrow);
+//    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
+//    uint32_t curr_row = 0;
+//    for (uint32_t i = 0; i < nvals; ++i){
+//        values[i] = vIndxValsTable[i].val;
+//        cols[i] = vIndxValsTable[i].col;
+//        curr_row = vIndxValsTable[i].row;
+//        if (curr_row != tmprow){ //primer elemento de la fila
+//            row_start[curr_row] = i;
+//            tmprow = curr_row;
+//            if (i != 0){ //fin de la fila anterior
+//                row_end[curr_row-1] = i;
+//            }
+//        }
+//    }
+//    row_end[nrow-1] = nvals;
 
-    return Sparse_MatComplexd(nrow,ncol,row_start,row_end,cols,values);
-}
+//    return Sparse_MatComplexd(nrow,ncol,row_start,row_end,cols,values);
+//}
 
-Sparse_MatDoub Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<double> &vvals,
-                      uint32_t nrow,uint32_t ncol){
+//Sparse_MatDoub Sparse(const std::vector<uint32_t> &vrows,const std::vector<uint32_t> &vcols,const std::vector<double> &vvals,
+//                      uint32_t nrow,uint32_t ncol){
 
-    assert(vrows.size() == vcols.size() && vrows.size() == vvals.size());
+//    assert(vrows.size() == vcols.size() && vrows.size() == vvals.size());
 
-    if (vrows.size() == 0) return Sparse_MatDoub();
+//    if (vrows.size() == 0) return Sparse_MatDoub();
 
-    std::vector<indexs_val<double>> vIndxValsTable(1,indexs_val<double>(vrows[0],vcols[0],vvals[0]));
-    for (size_t ii = 1; ii < vrows.size(); ++ii){
-        indexs_val<double> tmp(vrows[ii],vcols[ii],vvals[ii]);
+//    std::vector<indexs_val<double>> vIndxValsTable(1,indexs_val<double>(vrows[0],vcols[0],vvals[0]));
+//    for (size_t ii = 1; ii < vrows.size(); ++ii){
+//        indexs_val<double> tmp(vrows[ii],vcols[ii],vvals[ii]);
 
-        auto iter = std::find(vIndxValsTable.begin(),vIndxValsTable.end(),tmp);
-        if (iter != vIndxValsTable.end()) iter->val+=tmp.val; //sumando aportes de distintos elementos al mismo nodo
-        else vIndxValsTable.push_back(tmp); //sino esta el nodo se agrega
-    }
+//        auto iter = std::find(vIndxValsTable.begin(),vIndxValsTable.end(),tmp);
+//        if (iter != vIndxValsTable.end()) iter->val+=tmp.val; //sumando aportes de distintos elementos al mismo nodo
+//        else vIndxValsTable.push_back(tmp); //sino esta el nodo se agrega
+//    }
 
-    std::sort(vIndxValsTable.begin(),vIndxValsTable.end()); //se ordena la lista con privilegio de filas
+//    std::sort(vIndxValsTable.begin(),vIndxValsTable.end()); //se ordena la lista con privilegio de filas
 
-    uint32_t nvals = vIndxValsTable.size();
-    std::vector<double> values(nvals);
-    std::vector<uint32_t> cols(nvals);
-    std::vector<uint32_t> row_start(nrow);
-    std::vector<uint32_t> row_end(nrow);
-    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
-    uint32_t curr_row = 0;
-    for (uint32_t i = 0; i < nvals; ++i){
-        values[i] = vIndxValsTable[i].val;
-        cols[i] = vIndxValsTable[i].col;
-        curr_row = vIndxValsTable[i].row;
-        if (curr_row != tmprow){ //primer elemento de la fila
-            row_start[curr_row] = i;
-            tmprow = curr_row;
-            if (i != 0){ //fin de la fila anterior
-                row_end[curr_row-1] = i;
-            }
-        }
-    }
-    row_end[nrow-1] = nvals;
-    return Sparse_MatDoub(nrow,ncol,row_start,row_end,cols,values);
-}
+//    uint32_t nvals = vIndxValsTable.size();
+//    std::vector<double> values(nvals);
+//    std::vector<uint32_t> cols(nvals);
+//    std::vector<uint32_t> row_start(nrow);
+//    std::vector<uint32_t> row_end(nrow);
+//    uint32_t tmprow = std::numeric_limits<uint32_t>::max();
+//    uint32_t curr_row = 0;
+//    for (uint32_t i = 0; i < nvals; ++i){
+//        values[i] = vIndxValsTable[i].val;
+//        cols[i] = vIndxValsTable[i].col;
+//        curr_row = vIndxValsTable[i].row;
+//        if (curr_row != tmprow){ //primer elemento de la fila
+//            row_start[curr_row] = i;
+//            tmprow = curr_row;
+//            if (i != 0){ //fin de la fila anterior
+//                row_end[curr_row-1] = i;
+//            }
+//        }
+//    }
+//    row_end[nrow-1] = nvals;
+//    return Sparse_MatDoub(nrow,ncol,row_start,row_end,cols,values);
+//}
 
 
 #endif // UTILITIES_H

@@ -49,6 +49,7 @@ inline Sparse_MatComplexd fononic_elemental_stiffness_matrix(const VecDoub &Xe,i
     //std::vector<uint32_t> vrowsdofsxelems(dofxelem);
     //uint32_t dofs = mesh.m_dofxnode*mesh.m_nodes_number;
     //std::vector<indexs_val<complexd>> v_index_val_table;
+    //v_index_val_table.reserve(dofxelem*dofxelem*nelem);
     for (size_t i = 0; i < ipoints; ++i){
         QPointF p = g_cuad.gauss_points[i];
         double w = g_cuad.weights[i];
@@ -70,6 +71,75 @@ inline Sparse_MatComplexd fononic_elemental_stiffness_matrix(const VecDoub &Xe,i
             double C11 = 266.5519;
             double C12 = 114.2365;
             double C33 = 76.1577;
+            //******************************************************************
+//            for (size_t m = 0; m < nodxelem; ++m){
+//                //size_t m_indx = m/2;
+//                uint32_t m0 = 2*mesh.m_element_connect(j,m);
+//                uint32_t m1 = 2*mesh.m_element_connect(j,m) + 1;
+//                for (size_t n = m; n < nodxelem; ++n){
+//                    //size_t n_indx = n/2;
+//                    uint32_t n0 = 2*mesh.m_element_connect(j,n);
+//                    uint32_t n1 = 2*mesh.m_element_connect(j,n) + 1;
+//                    complexd val00 = wdetJ*(C11*conjB(0,m)*B(0,n) + C33*conjB(1,m)*B(1,n)); //par-par m0-n0
+//                    complexd val01 = wdetJ*(C12*conjB(0,m)*B(1,n) + C33*conjB(1,m)*B(0,n)); //par-impar m0-n1
+//                    complexd val10 = wdetJ*(C12*conjB(1,m)*B(0,n) + C33*conjB(0,m)*B(1,n)); //impar-par m1-n0
+//                    complexd val11 = wdetJ*(C11*conjB(1,m)*B(1,n) + C33*conjB(0,m)*B(0,n)); //impar-impar
+//                    if (m!=n){
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(m0,n0,val00));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(m0,n1,val01));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(m1,n0,val10));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(m1,n1,val11));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(n0,m0,val00));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(n0,m1,val01));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(n1,m0,val10));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(n1,m1,val11));
+//                    }else{
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(m0,n0,val00));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(m0,n1,val10));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(m1,n0,val01));
+//                        v_index_val_table.emplace_back(indexs_val<complexd>(m1,n1,val11));
+//                    }
+//                }
+//            }
+//                        index_pair p00(m0,n0);
+//                        index_pair p01(m0,n1);
+//                        index_pair p10(m1,n0);
+//                        index_pair p11(m1,n1);
+//                        index_pair sp00(n0,m0);
+//                        index_pair sp01(n0,m1);
+//                        index_pair sp10(n1,m0);
+//                        index_pair sp11(n1,m1);
+//                        table[p00] += val00;
+//                        table[sp00] += val00;
+//                        table[p01] += val01;
+//                        table[sp01] += val01;
+//                        table[p10] += val10;
+//                        table[sp10] += val10;
+//                        table[p11] += val11;
+//                        table[sp11] += val11;
+
+//                    }else{
+//                        index_pair p00(m0,n0);
+//                        index_pair p01(m0,n1);
+//                        index_pair p10(m1,n0);
+//                        index_pair p11(m1,n1);
+//                        table[p00] += val00;
+//                        table[p01] += val01;
+//                        table[p10] += val10;
+//                        table[p11] += val11;
+//                    }
+
+//                    if (n%2){ //n: impar
+//                              //va un += si la idea de la tabla no funciona
+//                        /*m: impar*/ if (m%2) v_Kelem[j](m,n) += wdetJ*(C11*conjB(1,m_indx)*B(1,n_indx) + C33*conjB(0,m_indx)*B(0,n_indx));
+//                        /*m: par*/   else v_Kelem[j](m,n) += wdetJ*(C12*conjB(0,m_indx)*B(1,n_indx) + C33*conjB(1,m_indx)*B(0,n_indx));
+//                    }else{ //n: par
+//                        /*m: impar*/ if (m%2) v_Kelem[j](m,n) += wdetJ*(C12*conjB(1,m_indx)*B(0,n_indx) + C33*conjB(0,m_indx)*B(1,n_indx));
+//                        /*m: par*/   else v_Kelem[j](m,n) += wdetJ*(C11*conjB(0,m_indx)*B(0,n_indx) + C33*conjB(1,m_indx)*B(1,n_indx));
+//                    }
+//                }
+//            }
+            //*********************************************************************
             for (size_t m = 0; m < dofxelem; ++m){
                 size_t m_indx = m/2;
                 for (size_t n = m; n < dofxelem; ++n){
@@ -102,6 +172,7 @@ inline Sparse_MatComplexd fononic_elemental_stiffness_matrix(const VecDoub &Xe,i
     }
     return assembly(mesh,v_Kelem);
     //return Sparse(table,dofs,dofs);
+    //return Sparse(v_index_val_table,dofs,dofs);
 }
 inline Matrix<double,2,MATRIX_TYPE::CSR> fononic_elemental_mass_matrix(const VecDoub &Xe,isotropic_material mat1,isotropic_material mat2,
                                                            const VecDoub &k,const gaussian_cuadrature &g_cuad,
@@ -144,7 +215,7 @@ inline Matrix<double,2,MATRIX_TYPE::CSR> fononic_elemental_mass_matrix(const Vec
 template<typename T,ELEMENT_TYPE etype>
 inline Matrix<T,2,MATRIX_TYPE::CSR> fononic_reduced_system(const Matrix<T,2,MATRIX_TYPE::CSR> &K,const rectangular_mesh<etype> &mesh){
 
-    uint32_t dofxnode = mesh.dofxnode;
+    uint32_t dofxnode = mesh.m_dofxnode;
 
     std::vector<uint32_t> c0(dofxnode);
     std::vector<uint32_t> c1(dofxnode);
@@ -164,7 +235,7 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> fononic_reduced_system(const Matrix<T,2,MATR
         c0[0] = mesh.m_corner_dof[0]; c0[1] = mesh.m_corner_dof[1];
         c1[0] = mesh.m_corner_dof[2]; c1[1] = mesh.m_corner_dof[3];
         c2[0] = mesh.m_corner_dof[4]; c2[1] = mesh.m_corner_dof[5];
-        c3[0] = mesh.m_corner_dof[6]; c3[1] = mesh.m_corner_dof[8];
+        c3[0] = mesh.m_corner_dof[6]; c3[1] = mesh.m_corner_dof[7];
         break;
     case 3:
         assert(mesh.m_corner_dof.size() == 12);

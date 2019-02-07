@@ -103,7 +103,7 @@ double rho2 = 2;
 isotropic_material mat1(E1,pois,rho1);
 isotropic_material mat2(E2,pois,rho2);
 
-rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,2,2);
+rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,50,50);
 micro_cell_mesh.split_mesh_nodes_and_dof();
 
 //cout << micro_cell_mesh.m_element_connect << endl;
@@ -122,13 +122,40 @@ auto end = std::chrono::high_resolution_clock::now();
 auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
 printf("ElapsedTime[sec] = %u \n",elapsed);
 cout << "Assembly completed \n";
-cout << K.values().size() << "\n";
+//K.printData();
+//cout << K.values().size() << "\n";
 cout << K.rows() << "\n";
-K.printData();
-Matrix<double,2,MATRIX_TYPE::CSR> M = fononic_elemental_mass_matrix(Xe,mat1,mat2,k,gcuad,micro_cell_mesh,quad4_master_element_shape_functions
-                                                                    ,quad4_master_element_shape_functions_gradient);
 
-M.printData();
+start = std::chrono::high_resolution_clock::now();
+Matrix<complexd,2,MATRIX_TYPE::CSR> Kred = fononic_reduced_system(K,micro_cell_mesh);
+end = std::chrono::high_resolution_clock::now();
+printf("ElapsedTime[sec] = %u \n",elapsed);
+cout << "reduction completed \n";
+//Kred.printData();
+cout << Kred.values().size() << "\n";
+cout << Kred.rows() << "\n";
+
+//start = std::chrono::high_resolution_clock::now();
+//Matrix<double,2,MATRIX_TYPE::CSR> M = fononic_elemental_mass_matrix(Xe,mat1,mat2,k,gcuad,micro_cell_mesh,quad4_master_element_shape_functions
+//                                                                    ,quad4_master_element_shape_functions_gradient);
+//end = std::chrono::high_resolution_clock::now();
+//elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
+//printf("ElapsedTime[sec] = %u \n",elapsed);
+//cout << "Assembly completed \n";
+
+//start = std::chrono::high_resolution_clock::now();
+//Matrix<complexd,2,MATRIX_TYPE::CSR> SUM = K+K;
+//end = std::chrono::high_resolution_clock::now();
+//elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
+//printf("ElapsedTime[sec] = %u \n",elapsed);
+//cout << "sum completed \n";
+//SUM.printData();
+
+//M.printData();
+//cout << M.values().size() << "\n";
+//cout << M.rows() << "\n";
+
+
 
 return a.exec();
 }

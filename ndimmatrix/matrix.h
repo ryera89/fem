@@ -1021,11 +1021,19 @@ public:
            const std::vector<uint32_t> &columns,const std::vector<T> &vals):m_rows(rows),m_cols(cols),m_rows_start(rows_start),
                                                                              m_rows_end(rows_end),m_columns(columns),m_elems(vals){
         assert(m_columns.size() == m_elems.size() && m_rows == m_rows_start.size() && m_rows == m_rows_end.size());
+        m_elems.shrink_to_fit();
+        m_columns.shrink_to_fit();
+        m_rows_start.shrink_to_fit();
+        m_rows_end.shrink_to_fit();
     }
 
     Matrix(uint32_t rows,uint32_t cols,std::vector<uint32_t> &&rows_start,std::vector<uint32_t> &&rows_end,std::vector<uint32_t> &&columns,
            std::vector<T> &&vals):m_rows(rows),m_cols(cols),m_rows_start(rows_start),m_rows_end(rows_end),m_columns(columns),m_elems(vals){
         assert(m_columns.size() == m_elems.size() && m_rows == m_rows_start.size() && m_rows == m_rows_end.size());
+        m_elems.shrink_to_fit();
+        m_columns.shrink_to_fit();
+        m_rows_start.shrink_to_fit();
+        m_rows_end.shrink_to_fit();
     }
     Matrix(const Matrix<T,2> &m):m_rows(m.rows()),m_cols(m.cols()),m_rows_start(m_rows),m_rows_end(m_rows){
         for (size_t i = 0; i < m_rows; ++i){
@@ -1085,6 +1093,7 @@ public:
         if (j > m_columns[end-1]) return zero_val;
 
         for (;beg<end;++beg){
+            if (m_columns[beg] > j) return  zero_val;
             if (m_columns[beg] == j) return m_elems[beg];
         }
         return zero_val;
@@ -1778,57 +1787,22 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> operator+(const Matrix<T,2,MATRIX_TYPE::CSR>
     std::vector<uint32_t> rowStart(nrows);
     std::vector<uint32_t> rowEnd(nrows);
     std::vector<uint32_t> columns;
+    columns.reserve(spm1.values().size() + spm2.values().size());
     std::vector<T> vals;
+    vals.reserve(spm1.values().size() + spm2.values().size());
 
-    for (size_t i = 0; i < nrows; ++i){
+    for (uint32_t i = 0; i < spm1.rows(); ++i){
         bool first_rinclusion = true;
-        uint32_t beg1 = spm1.row_start()[i];
-        uint32_t end1 = spm1.row_end()[i];
-        uint32_t beg2 = spm2.row_start()[i];
-        uint32_t end2 = spm2.row_end()[i];
-
-        uint32_t col1 = std::numeric_limits<uint32_t>::max();
-        uint32_t col2 = std::numeric_limits<uint32_t>::max();
-
-        while (beg1 < end1 || beg2 < end2){
-
-            if (beg1 < end1) col1 = spm1.columns()[beg1]; else col1 = std::numeric_limits<uint32_t>::max();
-            if (beg2 < end2) col2 = spm2.columns()[beg2]; else col2 = std::numeric_limits<uint32_t>::max();
-
-            if (col1 < col2){
-                T val1 = spm1.values()[beg1];
-                vals.push_back(val1);
-                columns.push_back(col1);
-                ++beg1;
+        for (uint32_t j = 0; j < spm1.cols(); ++j){
+            T val = spm1(i,j) + spm2(i,j);
+            if (val == T()) continue;
+            else{
+                vals.push_back(val);
+                columns.push_back(j);
                 if (first_rinclusion){
                     rowStart[i] = vals.size()-1;
                     first_rinclusion = false;
                 }
-                continue;
-            }
-            if (col1 > col2){
-                T val2 = spm2.values()[beg2];
-                vals.push_back(val2);
-                columns.push_back(col2);
-                ++beg2; //beg2 pasa al nuevo valor
-                if (first_rinclusion){
-                    rowStart[i] = vals.size()-1;
-                    first_rinclusion = false;
-                }
-                continue;
-            }
-            if (col1 == col2){
-                T val1 = spm1.values()[beg1];
-                T val2 = spm2.values()[beg2];
-                vals.push_back(val1+val2);
-                columns.push_back(col1);
-                ++beg1;
-                ++beg2;
-                if (first_rinclusion){
-                    rowStart[i] = vals.size()-1;
-                    first_rinclusion = false;
-                }
-                continue;
             }
         }
         if (first_rinclusion){ //full zeros row
@@ -1837,6 +1811,64 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> operator+(const Matrix<T,2,MATRIX_TYPE::CSR>
         }else{
             rowEnd[i] = vals.size();}
     }
+
+//    for (size_t i = 0; i < nrows; ++i){
+//        bool first_rinclusion = true;
+//        uint32_t beg1 = spm1.row_start()[i];
+//        uint32_t end1 = spm1.row_end()[i];
+//        uint32_t beg2 = spm2.row_start()[i];
+//        uint32_t end2 = spm2.row_end()[i];
+
+//        uint32_t col1 = std::numeric_limits<uint32_t>::max();
+//        uint32_t col2 = std::numeric_limits<uint32_t>::max();
+
+//        while (beg1 < end1 || beg2 < end2){
+
+//            if (beg1 < end1) col1 = spm1.columns()[beg1]; else col1 = std::numeric_limits<uint32_t>::max();
+//            if (beg2 < end2) col2 = spm2.columns()[beg2]; else col2 = std::numeric_limits<uint32_t>::max();
+
+//            if (col1 < col2){
+//                T val1 = spm1.values()[beg1];
+//                vals.push_back(val1);
+//                columns.push_back(col1);
+//                ++beg1;
+//                if (first_rinclusion){
+//                    rowStart[i] = vals.size()-1;
+//                    first_rinclusion = false;
+//                }
+//                continue;
+//            }
+//            if (col1 > col2){
+//                T val2 = spm2.values()[beg2];
+//                vals.push_back(val2);
+//                columns.push_back(col2);
+//                ++beg2; //beg2 pasa al nuevo valor
+//                if (first_rinclusion){
+//                    rowStart[i] = vals.size()-1;
+//                    first_rinclusion = false;
+//                }
+//                continue;
+//            }
+//            if (col1 == col2){
+//                T val1 = spm1.values()[beg1];
+//                T val2 = spm2.values()[beg2];
+//                vals.push_back(val1+val2);
+//                columns.push_back(col1);
+//                ++beg1;
+//                ++beg2;
+//                if (first_rinclusion){
+//                    rowStart[i] = vals.size()-1;
+//                    first_rinclusion = false;
+//                }
+//                continue;
+//            }
+//        }
+//        if (first_rinclusion){ //full zeros row
+//            rowStart[i] = vals.size();
+//            rowEnd[i] = vals.size();
+//        }else{
+//            rowEnd[i] = vals.size();}
+//    }
 
     return Matrix<T,2,MATRIX_TYPE::CSR>(nrows,ncols,rowStart,rowEnd,columns,vals);
 
