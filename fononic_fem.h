@@ -175,7 +175,7 @@ inline Sparse_MatComplexd fononic_elemental_stiffness_matrix(const VecDoub &Xe,i
     //return Sparse(table,dofs,dofs);
     //return Sparse(v_index_val_table,dofs,dofs);
 }
-inline Matrix<double,2,MATRIX_TYPE::CSR> fononic_elemental_mass_matrix(const VecDoub &Xe,isotropic_material mat1,isotropic_material mat2,
+inline Matrix<complexd,2,MATRIX_TYPE::CSR> fononic_elemental_mass_matrix(const VecDoub &Xe,isotropic_material mat1,isotropic_material mat2,
                                                            const VecDoub &k,const gaussian_cuadrature &g_cuad,
                                                            const rectangular_mesh<ELEMENT_TYPE::QUAD4> &mesh,
                                                            VecDoub (*shapeFun)(const QPointF &p),
@@ -187,7 +187,7 @@ inline Matrix<double,2,MATRIX_TYPE::CSR> fononic_elemental_mass_matrix(const Vec
     size_t ipoints = g_cuad.gauss_points_number; //puntos de integracion
     uint32_t nrow = mesh.m_dofxnode*mesh.m_nodes_coordinates.size(); //numero de nodos x dofxnodo
     assert(mesh.m_element_connect.rows() == nelem && nodxelem == g_cuad.nodxelem);
-    std::vector<SMatDoub> v_Melem(nelem,SMatDoub(dofxelem,0)); //TODO ver si esto se incializa a
+    std::vector<HMatComplexd> v_Melem(nelem,HMatComplexd(dofxelem,0)); //TODO ver si esto se incializa a
      //SMatDoub Melem(dofxelem);
      std::vector<indexs_val<double>> v_index_val_table;
      for (uint32_t i = 0; i < ipoints; ++i){
@@ -205,8 +205,8 @@ inline Matrix<double,2,MATRIX_TYPE::CSR> fononic_elemental_mass_matrix(const Vec
             for (size_t m = 0; m < nodxelem; ++m){
                 for (size_t n = m; n < nodxelem; ++n){
                     double tmpval = tmp*N(m)*N(n);
-                    v_Melem[j](2*m,2*n) += tmpval;
-                    v_Melem[j](2*m+1,2*n+1) += tmpval;
+                    v_Melem[j](2*m,2*n) += complexd(tmpval,0);
+                    v_Melem[j](2*m+1,2*n+1) += complexd(tmpval,0);;
                 }
             }
         }

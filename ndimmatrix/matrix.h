@@ -9,6 +9,10 @@
 #include <iostream>
 #include <iomanip>
 #include <map>
+
+//#define MKL_Complex16 std::complex<double>
+//#define MKL_INT uint32_t
+
 #include "mkl.h"
 
 enum class MATRIX_TYPE{GEN,SYMM,HER,UTRI,LTRI,DIAG,CSR,CSR3};
@@ -1057,6 +1061,9 @@ public:
 
         }
     }
+
+    size_t nnz() const{return m_elems.size();}
+
     Matrix& operator=(const Matrix<T,2> &m){
         m_rows = m.rows();
         m_cols = m.cols();
@@ -1174,6 +1181,27 @@ public:
                 uint32_t jj = jindex[j];
                 if (jj < icolb || jj > icole) continue; //A(ii,jj) = 0; no esta entre los valores
 
+//                if (jj == icolb){
+//                    T val = m_elems[ibeg];
+//                    elems.push_back(val);
+//                    columns.push_back(j);
+//                    if (rfirst_inclusion){ //se ejecuta maximo solo una ves del loop principal i
+//                        pointerB[i] = elems.size()-1;
+//                        rfirst_inclusion = false;
+//                    }
+//                    continue;
+//                }
+//                if (jj == icole){
+//                    T val = m_elems[iend-1];
+//                    elems.push_back(val);
+//                    columns.push_back(j);
+//                    if (rfirst_inclusion){ //se ejecuta maximo solo una ves del loop principal i
+//                        pointerB[i] = elems.size()-1;
+//                        rfirst_inclusion = false;
+//                    }
+//                    continue;
+//                }
+
                 std::pair<std::vector<uint32_t>::const_iterator,std::vector<uint32_t>::const_iterator> ip;
                 ip = std::equal_range(m_columns.cbegin()+ibeg,m_columns.cbegin()+iend,jj);
                 uint32_t tmp = std::distance(ip.first,ip.second);
@@ -1186,7 +1214,6 @@ public:
                         pointerB[i] = elems.size()-1;
                         rfirst_inclusion = false;
                     }
-
                 }
             }
             if (rfirst_inclusion){ //una fila llena de zeros
@@ -1235,17 +1262,17 @@ public:
     auto endValues(){return std::end(m_elems);}
     auto endValues() const{return std::cend(m_elems);}
 
-    auto columnsData(){return m_columns.data();}
-    auto columnsData() const {return m_columns.data();}
+    uint32_t* columnsData(){return m_columns.data();}
+    const uint32_t* columnsData() const {return m_columns.data();}
 
-    auto rowsStartData(){return m_rows_start.data();}
-    auto rowsStartData() const{return m_rows_start.data();}
+    uint32_t* rowsStartData(){return m_rows_start.data();}
+    const uint32_t* rowsStartData() const{return m_rows_start.data();}
 
-    auto rowsEndData(){return m_rows_end.data();}
-    auto rowsEndData() const{return m_rows_end.data();}
+    uint32_t* rowsEndData(){return m_rows_end.data();}
+    const uint32_t* rowsEndData() const{return m_rows_end.data();}
 
-    auto valuesData(){return m_elems.data();}
-    auto valuesData() const{return m_elems.data();}
+    T* valuesData(){return m_elems.data();}
+    const T* valuesData() const{return m_elems.data();}
 };
 template<typename T>
 class Matrix<T,2,MATRIX_TYPE::CSR3>{

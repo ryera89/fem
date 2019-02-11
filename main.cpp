@@ -103,7 +103,7 @@ double rho2 = 2;
 isotropic_material mat1(E1,pois,rho1);
 isotropic_material mat2(E2,pois,rho2);
 
-rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,200,200);
+rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,100,100);
 micro_cell_mesh.split_mesh_nodes_and_dof();
 
 //cout << micro_cell_mesh.m_element_connect << endl;
@@ -127,7 +127,7 @@ cout << K.values().size() << "\n";
 cout << K.rows() << "\n";
 
 start = std::chrono::high_resolution_clock::now();
-Matrix<complexd,2,MATRIX_TYPE::CSR> Kred = fononic_reduced_system(K,micro_cell_mesh);
+const Matrix<complexd,2,MATRIX_TYPE::CSR> Kred = fononic_reduced_system(K,micro_cell_mesh);
 end = std::chrono::high_resolution_clock::now();
 elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
 printf("ElapsedTime[sec] = %u \n",elapsed);
@@ -136,13 +136,86 @@ cout << "reduction completed \n";
 cout << Kred.values().size() << "\n";
 cout << Kred.rows() << "\n";
 
-//start = std::chrono::high_resolution_clock::now();
-//Matrix<double,2,MATRIX_TYPE::CSR> M = fononic_elemental_mass_matrix(Xe,mat1,mat2,k,gcuad,micro_cell_mesh,quad4_master_element_shape_functions
-//                                                                    ,quad4_master_element_shape_functions_gradient);
-//end = std::chrono::high_resolution_clock::now();
-//elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
-//printf("ElapsedTime[sec] = %u \n",elapsed);
-//cout << "Assembly completed \n";
+start = std::chrono::high_resolution_clock::now();
+Matrix<complexd,2,MATRIX_TYPE::CSR> M = fononic_elemental_mass_matrix(Xe,mat1,mat2,k,gcuad,micro_cell_mesh,quad4_master_element_shape_functions
+                                                                    ,quad4_master_element_shape_functions_gradient);
+end = std::chrono::high_resolution_clock::now();
+elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
+printf("ElapsedTime[sec] = %u \n",elapsed);
+cout << "Assembly completed \n";
+
+start = std::chrono::high_resolution_clock::now();
+const Matrix<complexd,2,MATRIX_TYPE::CSR> Mred = fononic_reduced_system(M,micro_cell_mesh);
+end = std::chrono::high_resolution_clock::now();
+elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
+printf("ElapsedTime[sec] = %u \n",elapsed);
+cout << "reduction completed \n";
+cout << Mred.values().size() << "\n";
+cout << Mred.rows() << "\n";
+
+/*********************MKL Eigenvalues******************************/
+MKL_INT fpm[128];
+fpm[0] = 1;
+fpm[1] = 8;
+fpm[2] = 12;
+fpm[3] = 20;
+fpm[4] = 0;
+fpm[5] = 0;
+fpm[6] = 5;
+fpm[13] = 0;
+fpm[26] = 1;
+fpm[27] = 1;
+fpm[63] = 0;
+
+std::vector<MKL_Complex16> A(Kred.nnz());
+for (int i = 0; i < Kred.nnz(); ++i){
+    A[i].real = Kred.values()[i].real();
+    A[i].imag = Kred.values()[i].imag();
+}
+std::vector<MKL_Complex16> B(Mred.nnz());
+for (int i = 0; i < Mred.nnz(); ++i){
+    B[i].real = Mred.values()[i].real();
+    B[i].imag = Mred.values()[i].imag();
+}
+
+const double emin = 0;
+const double emax = 100;
+const char uplo = 'F';
+const MKL_INT n = Kred.rows();
+vector<MKL_INT> rowIndexA(n+1);
+for (int i = 0; i < n; ++i) rowIndexA[i] = Kred.row_start()[i];
+rowIndexA[n] = Kred.nnz();
+vector<MKL_INT> ja(Kred.nnz());
+for (int i = 0; i < ja.size(); ++i) ja[i] = Kred.columns()[i];
+//rowIndexA[n] = Kred.nnz();
+
+vector<MKL_INT> rowIndexB(n+1);
+for (int i = 0; i < n; ++i) rowIndexB[i] = Mred.row_start()[i];
+rowIndexA[n] = Mred.nnz();
+vector<MKL_INT> jb(Mred.nnz());
+for (int i = 0; i < jb.size(); ++i) jb[i] = Mred.columns()[i];
+
+cout << rowIndexA[0] << "  " << rowIndexA[1] << "\n";
+
+MKL_INT loop;
+MKL_INT m0 = 10;
+MKL_INT m;
+MKL_INT info;
+
+double epsout;
+double eigenvalues[10];
+MKL_Complex16 eigenvectors[10];
+double res[10];
+//std::vector<double> eigenvalues(m0);
+//std::vector<complexd> eigenvectors(m0);
+//std::vector<double> res(m0);
+
+//zfeast_hcsrgv(&uplo,&n,Kred.valuesData(),rowIndexA.data(),Kred.columnsData(),Mred.valuesData(),rowIndexB.data(),Mred.columnsData(),
+//              fpm,&epsout,&loop,&emin,&emax,&m0,eigenvalues,eigenvectors,&m,res,&info);
+zfeast_hcsrgv(&uplo,&n,A.data(),rowIndexA.data(),ja.data(),B.data(),rowIndexB.data(),jb.data(),
+              fpm,&epsout,&loop,&emin,&emax,&m0,eigenvalues,eigenvectors,&m,res,&info);
+
+/******************************************************************/
 
 //start = std::chrono::high_resolution_clock::now();
 //Matrix<complexd,2,MATRIX_TYPE::CSR> SUM = K+K;
