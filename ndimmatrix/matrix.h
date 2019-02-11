@@ -8,6 +8,7 @@
 #include "matrix_ref.h"
 #include <iostream>
 #include <iomanip>
+#include <map>
 #include "mkl.h"
 
 enum class MATRIX_TYPE{GEN,SYMM,HER,UTRI,LTRI,DIAG,CSR,CSR3};
@@ -1099,32 +1100,47 @@ public:
         return zero_val;
     }
     Matrix operator()(const std::valarray<uint32_t> &iindex,const std::valarray<uint32_t> &jindex) const{
-        size_t nrow = iindex.size();
-        size_t ncol = jindex.size();
+        uint32_t nrow = iindex.size();
+        uint32_t ncol = jindex.size();
 
         std::vector<T> elems;
+        elems.reserve(nrow*ncol);
         std::vector<uint32_t> columns;
+        columns.reserve(nrow*ncol);
         std::vector<uint32_t> pointerB(nrow);
         std::vector<uint32_t> pointerE(nrow);
 
         for (uint32_t i = 0; i < nrow; ++i){
-            uint32_t itmp = nrow;
+            bool rfirst_inclusion =  true;
             uint32_t ii = iindex[i];
+            uint32_t beg = m_rows_start[ii];
+            uint32_t end = m_rows_end[ii];
+            if (beg == end){ //fila todos zeros
+                pointerB[i] = 0; pointerE[i] = 0;
+                continue;
+            }
             for (uint32_t j = 0; j < ncol; ++j){
+                uint32_t colb = m_columns[beg];
+                uint32_t cole = m_columns[end-1];
                 uint32_t jj = jindex[j];
-                T val = this->operator()(ii,jj);
-                if (val != T()){ //si el valor es distinto de cero
-                    elems.push_back(val);
-                    columns.push_back(j);
-                    if (itmp != i){ //se ejecuta maximo solo una ves del loop principal i
-                        pointerB[i] = elems.size()-1;
-                        itmp = i;
+
+                if (jj < colb || jj > cole) continue;
+
+                for (;beg<end;++beg){
+                    if (m_columns[beg] > jj) break;
+                    if (m_columns[beg] == jj){
+                        T val = m_elems[beg];
+                        elems.push_back(val);
+                        columns.push_back(j);
+                        if (rfirst_inclusion){ //se ejecuta maximo solo una ves del loop principal i
+                            pointerB[i] = elems.size()-1;
+                            rfirst_inclusion = false;
+                        }
                     }
                 }
             }
-            if (itmp != i){ //una fila llena de zeros
-                if (elems.size() == 0) {pointerB[i] = 0; pointerE[i] = 0;} /*primeras filas == 0*/
-                else {pointerB[i] = elems.size(); pointerE[i] = elems.size();}
+            if (rfirst_inclusion){ //una fila llena de zeros
+                pointerB[i] = elems.size(); pointerE[i] = elems.size();
             }else{ pointerE[i] = elems.size();}
         }
 
@@ -1135,31 +1151,48 @@ public:
         uint32_t ncol = jindex.size();
 
         std::vector<T> elems;
+        elems.reserve(m_elems.size());
         std::vector<uint32_t> columns;
+        columns.reserve(m_elems.size());
         std::vector<uint32_t> pointerB(nrow);
         std::vector<uint32_t> pointerE(nrow);
 
+
         for (uint32_t i = 0; i < nrow; ++i){
-            uint32_t itmp = nrow;
+            bool rfirst_inclusion =  true;
             uint32_t ii = iindex[i];
+            uint32_t ibeg = m_rows_start[ii];
+            uint32_t iend = m_rows_end[ii];
+            if (ibeg == iend){ //fila todos zeros
+                pointerB[i] = elems.size(); pointerE[i] = elems.size();
+                continue;
+            }
+            //uint32_t ilenght = ibeg-iend;
+            uint32_t icolb = m_columns[ibeg];
+            uint32_t icole = m_columns[iend-1];
             for (uint32_t j = 0; j < ncol; ++j){
                 uint32_t jj = jindex[j];
-                T val = this->operator()(ii,jj);
-                if (val != T()){ //si el valor es distinto de cero
+                if (jj < icolb || jj > icole) continue; //A(ii,jj) = 0; no esta entre los valores
+
+                std::pair<std::vector<uint32_t>::const_iterator,std::vector<uint32_t>::const_iterator> ip;
+                ip = std::equal_range(m_columns.cbegin()+ibeg,m_columns.cbegin()+iend,jj);
+                uint32_t tmp = std::distance(ip.first,ip.second);
+                if (tmp){
+                    int pos = ip.first - m_columns.begin();
+                    T val = m_elems[pos];
                     elems.push_back(val);
                     columns.push_back(j);
-                    if (itmp != i){ //se ejecuta maximo solo una ves del loop principal i
+                    if (rfirst_inclusion){ //se ejecuta maximo solo una ves del loop principal i
                         pointerB[i] = elems.size()-1;
-                        itmp = i;
+                        rfirst_inclusion = false;
                     }
+
                 }
             }
-            if (itmp != i){ //una fila llena de zeros
-                if (elems.size() == 0) {pointerB[i] = 0; pointerE[i] = 0;} /*primeras filas == 0*/
-                else {pointerB[i] = elems.size(); pointerE[i] = elems.size();}
+            if (rfirst_inclusion){ //una fila llena de zeros
+                pointerB[i] = elems.size(); pointerE[i] = elems.size();
             }else{ pointerE[i] = elems.size();}
         }
-
         return Matrix(nrow,ncol,pointerB,pointerE,columns,elems);
     }
 
@@ -1177,10 +1210,10 @@ public:
         }
     }
 
-    auto values() const{return m_elems;}
-    auto columns() const{return m_columns;}
-    auto row_start() const{return m_rows_start;}
-    auto row_end() const{return m_rows_end;}
+    const std::vector<T>& values() const{return m_elems;}
+    const std::vector<uint32_t>& columns() const{return m_columns;}
+    const std::vector<uint32_t>& row_start() const{return m_rows_start;}
+    const std::vector<uint32_t>& row_end() const{return m_rows_end;}
 
     auto beginColumns(){return m_columns.begin();}
     auto beginColumns() const {return m_columns.cbegin();}
@@ -1790,19 +1823,55 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> operator+(const Matrix<T,2,MATRIX_TYPE::CSR>
     columns.reserve(spm1.values().size() + spm2.values().size());
     std::vector<T> vals;
     vals.reserve(spm1.values().size() + spm2.values().size());
-
-    for (uint32_t i = 0; i < spm1.rows(); ++i){
+    for (size_t i = 0; i < nrows; ++i){
         bool first_rinclusion = true;
-        for (uint32_t j = 0; j < spm1.cols(); ++j){
-            T val = spm1(i,j) + spm2(i,j);
-            if (val == T()) continue;
-            else{
-                vals.push_back(val);
-                columns.push_back(j);
+        uint32_t beg1 = spm1.row_start()[i];
+        uint32_t end1 = spm1.row_end()[i];
+        uint32_t beg2 = spm2.row_start()[i];
+        uint32_t end2 = spm2.row_end()[i];
+
+        uint32_t col1 = std::numeric_limits<uint32_t>::max();
+        uint32_t col2 = std::numeric_limits<uint32_t>::max();
+
+        while (beg1 < end1 || beg2 < end2){
+
+            if (beg1 < end1) col1 = spm1.columns()[beg1]; else col1 = std::numeric_limits<uint32_t>::max();
+            if (beg2 < end2) col2 = spm2.columns()[beg2]; else col2 = std::numeric_limits<uint32_t>::max();
+
+            if (col1 < col2){
+                T val1 = spm1.values()[beg1];
+                vals.push_back(val1);
+                columns.push_back(col1);
+                ++beg1;
                 if (first_rinclusion){
                     rowStart[i] = vals.size()-1;
                     first_rinclusion = false;
                 }
+                continue;
+            }
+            if (col1 > col2){
+                T val2 = spm2.values()[beg2];
+                vals.push_back(val2);
+                columns.push_back(col2);
+                ++beg2; //beg2 pasa al nuevo valor
+                if (first_rinclusion){
+                    rowStart[i] = vals.size()-1;
+                    first_rinclusion = false;
+                }
+                continue;
+            }
+            if (col1 == col2){
+                T val1 = spm1.values()[beg1];
+                T val2 = spm2.values()[beg2];
+                vals.push_back(val1+val2);
+                columns.push_back(col1);
+                ++beg1;
+                ++beg2;
+                if (first_rinclusion){
+                    rowStart[i] = vals.size()-1;
+                    first_rinclusion = false;
+                }
+                continue;
             }
         }
         if (first_rinclusion){ //full zeros row
@@ -1811,64 +1880,6 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> operator+(const Matrix<T,2,MATRIX_TYPE::CSR>
         }else{
             rowEnd[i] = vals.size();}
     }
-
-//    for (size_t i = 0; i < nrows; ++i){
-//        bool first_rinclusion = true;
-//        uint32_t beg1 = spm1.row_start()[i];
-//        uint32_t end1 = spm1.row_end()[i];
-//        uint32_t beg2 = spm2.row_start()[i];
-//        uint32_t end2 = spm2.row_end()[i];
-
-//        uint32_t col1 = std::numeric_limits<uint32_t>::max();
-//        uint32_t col2 = std::numeric_limits<uint32_t>::max();
-
-//        while (beg1 < end1 || beg2 < end2){
-
-//            if (beg1 < end1) col1 = spm1.columns()[beg1]; else col1 = std::numeric_limits<uint32_t>::max();
-//            if (beg2 < end2) col2 = spm2.columns()[beg2]; else col2 = std::numeric_limits<uint32_t>::max();
-
-//            if (col1 < col2){
-//                T val1 = spm1.values()[beg1];
-//                vals.push_back(val1);
-//                columns.push_back(col1);
-//                ++beg1;
-//                if (first_rinclusion){
-//                    rowStart[i] = vals.size()-1;
-//                    first_rinclusion = false;
-//                }
-//                continue;
-//            }
-//            if (col1 > col2){
-//                T val2 = spm2.values()[beg2];
-//                vals.push_back(val2);
-//                columns.push_back(col2);
-//                ++beg2; //beg2 pasa al nuevo valor
-//                if (first_rinclusion){
-//                    rowStart[i] = vals.size()-1;
-//                    first_rinclusion = false;
-//                }
-//                continue;
-//            }
-//            if (col1 == col2){
-//                T val1 = spm1.values()[beg1];
-//                T val2 = spm2.values()[beg2];
-//                vals.push_back(val1+val2);
-//                columns.push_back(col1);
-//                ++beg1;
-//                ++beg2;
-//                if (first_rinclusion){
-//                    rowStart[i] = vals.size()-1;
-//                    first_rinclusion = false;
-//                }
-//                continue;
-//            }
-//        }
-//        if (first_rinclusion){ //full zeros row
-//            rowStart[i] = vals.size();
-//            rowEnd[i] = vals.size();
-//        }else{
-//            rowEnd[i] = vals.size();}
-//    }
 
     return Matrix<T,2,MATRIX_TYPE::CSR>(nrows,ncols,rowStart,rowEnd,columns,vals);
 

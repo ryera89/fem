@@ -4,6 +4,7 @@
 #include "gaussian_cuadrature.h"
 #include "fem.h"
 #include "utilities.h"
+#include <chrono>
 
 typedef Matrix<complexd,2> MatComplexd;
 typedef Matrix<complexd,2,MATRIX_TYPE::HER> HMatComplexd;
@@ -249,7 +250,11 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> fononic_reduced_system(const Matrix<T,2,MATR
         break;
     }
 
+    auto start = std::chrono::high_resolution_clock::now();
     Matrix<T,2,MATRIX_TYPE::CSR> K00(K(mesh.m_interior_dof,mesh.m_interior_dof));
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
+    printf("ElapsedTime[sec] = %u \n",elapsed);
 
     Matrix<T,2,MATRIX_TYPE::CSR> K01 = (K(mesh.m_interior_dof,mesh.m_left_bottom_dof)) +
                                        (K(mesh.m_interior_dof,mesh.m_right_top_dof));
@@ -264,22 +269,31 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> fononic_reduced_system(const Matrix<T,2,MATR
                                        (K(mesh.m_right_top_dof,mesh.m_interior_dof));
 
     Matrix<T,2,MATRIX_TYPE::CSR> K11 = (K(mesh.m_left_bottom_dof,mesh.m_left_bottom_dof)) +
-                                       (K(mesh.m_left_bottom_dof,mesh.m_right_top_dof)) +
-                                       (K(mesh.m_right_top_dof,mesh.m_left_bottom_dof)) +
-                                       (K(mesh.m_right_top_dof,mesh.m_right_top_dof));
+                                       (K(mesh.m_left_bottom_dof,mesh.m_right_top_dof));
 
-    Matrix<T,2,MATRIX_TYPE::CSR> K12 = (K(mesh.m_left_bottom_dof,c0)) + (K(mesh.m_left_bottom_dof,c1)) +
-                                       (K(mesh.m_left_bottom_dof,c2)) + (K(mesh.m_left_bottom_dof,c3)) +
-                                       (K(mesh.m_right_top_dof,c0)) + (K(mesh.m_right_top_dof,c1)) +
-                                       (K(mesh.m_right_top_dof,c2)) + (K(mesh.m_right_top_dof,c3));
+    K11 = K11 + (K(mesh.m_right_top_dof,mesh.m_left_bottom_dof));
+    K11 = K11 + (K(mesh.m_right_top_dof,mesh.m_right_top_dof));
 
-    Matrix<T,2,MATRIX_TYPE::CSR> K20 = (K(c0,mesh.m_interior_dof)) + (K(c1,mesh.m_interior_dof)) +
-                                       (K(c2,mesh.m_interior_dof)) + (K(c3,mesh.m_interior_dof));
 
-    Matrix<T,2,MATRIX_TYPE::CSR> K21 = (K(c0,mesh.m_left_bottom_dof)) + (K(c1,mesh.m_left_bottom_dof)) +
-                                       (K(c2,mesh.m_left_bottom_dof)) + (K(c3,mesh.m_left_bottom_dof)) +
-                                       (K(c0,mesh.m_right_top_dof)) + (K(c1,mesh.m_right_top_dof)) +
-                                       (K(c2,mesh.m_right_top_dof)) + (K(c3,mesh.m_right_top_dof));
+    Matrix<T,2,MATRIX_TYPE::CSR> K12 = (K(mesh.m_left_bottom_dof,c0)) + (K(mesh.m_left_bottom_dof,c1));
+    K12 = K12 + (K(mesh.m_left_bottom_dof,c2));
+    K12 = K12 + (K(mesh.m_left_bottom_dof,c3));
+    K12 = K12 + (K(mesh.m_right_top_dof,c0));
+    K12 = K12 + (K(mesh.m_right_top_dof,c1));
+    K12 = K12 + (K(mesh.m_right_top_dof,c2));
+    K12 = K12 + (K(mesh.m_right_top_dof,c3));
+
+    Matrix<T,2,MATRIX_TYPE::CSR> K20 = (K(c0,mesh.m_interior_dof)) + (K(c1,mesh.m_interior_dof));
+    K20 = K20 + (K(c2,mesh.m_interior_dof));
+    K20 = K20 + (K(c3,mesh.m_interior_dof));
+
+    Matrix<T,2,MATRIX_TYPE::CSR> K21 = (K(c0,mesh.m_left_bottom_dof)) + (K(c1,mesh.m_left_bottom_dof));
+    K21 = K21 + (K(c2,mesh.m_left_bottom_dof));
+    K21 = K21 + (K(c3,mesh.m_left_bottom_dof));
+    K21 = K21 + (K(c0,mesh.m_right_top_dof));
+    K21 = K21 + (K(c1,mesh.m_right_top_dof));
+    K21 = K21 + (K(c2,mesh.m_right_top_dof));
+    K21 = K21 + (K(c3,mesh.m_right_top_dof));
 
 
     Matrix<T,2,MATRIX_TYPE::CSR> K22 = (K(c0,c0)) + (K(c0,c1)) + (K(c0,c2)) + (K(c0,c3)) +
@@ -288,15 +302,32 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> fononic_reduced_system(const Matrix<T,2,MATR
                                        (K(c3,c0)) + (K(c3,c1)) + (K(c3,c2)) + (K(c3,c3));
 
 
+
     uint32_t dim1 = mesh.m_interior_dof.size();
     uint32_t dim2 = mesh.m_left_bottom_dof.size();
     uint32_t dim3 = c0.size();
     uint32_t dim = dim1+dim2+dim3;
 
+    size_t n00 = K00.values().size();
+    size_t n01 = K01.values().size();
+    size_t n02 = K02.values().size();
+    size_t n10 = K10.values().size();
+    size_t n11 = K11.values().size();
+    size_t n12 = K12.values().size();
+    size_t n20 = K20.values().size();
+    size_t n21 = K21.values().size();
+    size_t n22 = K22.values().size();
+
+    size_t nvals = n00+n01+n02+n10+n11+n12+n20+n21+n22;
+
     std::vector<T> vvals;
+    vvals.reserve(nvals);
     std::vector<uint32_t> vcols;
+    vcols.reserve(nvals);
     std::vector<uint32_t> row_start;
+    row_start.reserve(dim);
     std::vector<uint32_t> row_end;
+    row_end.reserve(dim);
 
     for (uint32_t i = 0; i < dim1; ++i){
         bool first_insertion = true;
@@ -388,7 +419,7 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> fononic_reduced_system(const Matrix<T,2,MATR
             row_end.push_back(vvals.size());
         }else row_end.push_back(vvals.size());
     }
-    for (uint32_t i = 0; i < dim1; ++i){
+    for (uint32_t i = 0; i < dim3; ++i){
         bool first_insertion = true;
         uint32_t beg = K20.row_start()[i];
         uint32_t end = K20.row_end()[i];

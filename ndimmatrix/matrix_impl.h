@@ -133,5 +133,24 @@ constexpr void slice_dim(size_t n,const Matrix_Slice<N> &os,Matrix_Slice<N-1> &n
     }
 
 }
-
+struct index_pair{
+    uint32_t row;
+    uint32_t col;
+    index_pair() = default;
+    index_pair(uint32_t r,uint32_t c):row(r),col(c){}
+};
+inline bool operator == (const index_pair &iv1,const index_pair &iv2){return (iv1.row == iv2.row && iv1.col == iv2.col);}
+inline bool operator != (const index_pair &iv1,const index_pair &iv2){return !(iv1 == iv2);}
+inline bool operator < (const index_pair &iv1,const index_pair &iv2){
+    return ((iv1.row < iv2.row) || (iv1.row == iv2.row && iv1.col < iv2.col));
+}
+inline bool operator > (const index_pair &iv1,const index_pair &iv2){
+    return ((iv1.row > iv2.row) || (iv1.row == iv2.row && iv1.col > iv2.col));
+}
+inline bool operator <= (const index_pair &iv1,const index_pair &iv2){
+    return (iv1 < iv2 || iv1 == iv2);
+}
+inline bool operator >= (const index_pair &iv1,const index_pair &iv2){
+    return (iv1 > iv2 || iv1 == iv2);
+}
 #endif // MATRIX_IMPL_H

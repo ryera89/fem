@@ -103,7 +103,7 @@ double rho2 = 2;
 isotropic_material mat1(E1,pois,rho1);
 isotropic_material mat2(E2,pois,rho2);
 
-rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,50,50);
+rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,200,200);
 micro_cell_mesh.split_mesh_nodes_and_dof();
 
 //cout << micro_cell_mesh.m_element_connect << endl;
@@ -123,12 +123,13 @@ auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count
 printf("ElapsedTime[sec] = %u \n",elapsed);
 cout << "Assembly completed \n";
 //K.printData();
-//cout << K.values().size() << "\n";
+cout << K.values().size() << "\n";
 cout << K.rows() << "\n";
 
 start = std::chrono::high_resolution_clock::now();
 Matrix<complexd,2,MATRIX_TYPE::CSR> Kred = fononic_reduced_system(K,micro_cell_mesh);
 end = std::chrono::high_resolution_clock::now();
+elapsed = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
 printf("ElapsedTime[sec] = %u \n",elapsed);
 cout << "reduction completed \n";
 //Kred.printData();

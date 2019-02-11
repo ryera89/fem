@@ -69,26 +69,6 @@ inline double det_2x2_Matrix(const MatDoub &A){
 typedef Matrix<double,2,MATRIX_TYPE::CSR> Sparse_MatDoub;
 typedef Matrix<complexd,2,MATRIX_TYPE::CSR> Sparse_MatComplexd;
 
-struct index_pair{
-    uint32_t row;
-    uint32_t col;
-    index_pair() = default;
-    index_pair(uint32_t r,uint32_t c):row(r),col(c){}
-};
-inline bool operator == (const index_pair &iv1,const index_pair &iv2){return (iv1.row == iv2.row && iv1.col == iv2.col);}
-inline bool operator != (const index_pair &iv1,const index_pair &iv2){return !(iv1 == iv2);}
-inline bool operator < (const index_pair &iv1,const index_pair &iv2){
-    return ((iv1.row < iv2.row) || (iv1.row == iv2.row && iv1.col < iv2.col));
-}
-inline bool operator > (const index_pair &iv1,const index_pair &iv2){
-    return ((iv1.row > iv2.row) || (iv1.row == iv2.row && iv1.col > iv2.col));
-}
-inline bool operator <= (const index_pair &iv1,const index_pair &iv2){
-    return (iv1 < iv2 || iv1 == iv2);
-}
-inline bool operator >= (const index_pair &iv1,const index_pair &iv2){
-    return (iv1 > iv2 || iv1 == iv2);
-}
 template<typename T>
 struct indexs_val{
     uint32_t row;
