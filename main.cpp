@@ -103,7 +103,7 @@ double rho2 = 2;
 isotropic_material mat1(E1,pois,rho1);
 isotropic_material mat2(E2,pois,rho2);
 
-rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,100,100);
+rectangular_mesh<ELEMENT_TYPE::QUAD4> micro_cell_mesh(2,1.0,1.0,10,10);
 micro_cell_mesh.split_mesh_nodes_and_dof();
 
 //cout << micro_cell_mesh.m_element_connect << endl;
@@ -155,17 +155,18 @@ cout << Mred.rows() << "\n";
 
 /*********************MKL Eigenvalues******************************/
 MKL_INT fpm[128];
+feastinit(fpm);
 fpm[0] = 1;
-fpm[1] = 8;
-fpm[2] = 12;
-fpm[3] = 20;
-fpm[4] = 0;
-fpm[5] = 0;
-fpm[6] = 5;
-fpm[13] = 0;
+//fpm[1] = 8;
+//fpm[2] = 12;
+//fpm[3] = 20;
+//fpm[4] = 0;
+//fpm[5] = 0;
+//fpm[6] = 5;
+//fpm[13] = 0;
 fpm[26] = 1;
 fpm[27] = 1;
-fpm[63] = 0;
+//fpm[63] = 0;
 
 std::vector<MKL_Complex16> A(Kred.nnz());
 for (int i = 0; i < Kred.nnz(); ++i){
@@ -178,42 +179,52 @@ for (int i = 0; i < Mred.nnz(); ++i){
     B[i].imag = Mred.values()[i].imag();
 }
 
-const double emin = 0;
-const double emax = 100;
+const double emin = 0.0;
+const double emax = 1500.0;
 const char uplo = 'F';
 const MKL_INT n = Kred.rows();
-vector<MKL_INT> rowIndexA(n+1);
-for (int i = 0; i < n; ++i) rowIndexA[i] = Kred.row_start()[i];
-rowIndexA[n] = Kred.nnz();
-vector<MKL_INT> ja(Kred.nnz());
-for (int i = 0; i < ja.size(); ++i) ja[i] = Kred.columns()[i];
-//rowIndexA[n] = Kred.nnz();
+
+std::vector<MKL_INT> rowIndexA(n+1);
+for (int i = 0; i < n; ++i) rowIndexA[i] = Kred.row_start()[i]+1;
+rowIndexA[n] = Kred.nnz()+1;
+
+std::vector<MKL_INT> ja(Kred.nnz());
+for (int i = 0; i < Kred.nnz(); ++i) ja[i] = Kred.columns()[i]+1;
+
 
 vector<MKL_INT> rowIndexB(n+1);
-for (int i = 0; i < n; ++i) rowIndexB[i] = Mred.row_start()[i];
-rowIndexA[n] = Mred.nnz();
-vector<MKL_INT> jb(Mred.nnz());
-for (int i = 0; i < jb.size(); ++i) jb[i] = Mred.columns()[i];
+for (int i = 0; i < n; ++i) rowIndexB[i] = Mred.row_start()[i]+1;
+rowIndexB[n] = Mred.nnz()+1;
 
-cout << rowIndexA[0] << "  " << rowIndexA[1] << "\n";
+vector<MKL_INT> jb(Mred.nnz());
+for (int i = 0; i < Mred.nnz(); ++i) jb[i] = Mred.columns()[i]+1;
+
+//cout << rowIndexA[0] << "  " << rowIndexA[1] << "\n";
 
 MKL_INT loop;
-MKL_INT m0 = 10;
-MKL_INT m;
-MKL_INT info;
+MKL_INT m0 = 15;
+MKL_INT m = 0;
+MKL_INT info = 0;
 
 double epsout;
-double eigenvalues[10];
-MKL_Complex16 eigenvectors[10];
-double res[10];
+vector<double> eigenvalues(m0);
+vector<MKL_Complex16> eigenvectors(n*m0);
+//Matrix<complexd,2> eigenvectors(n,m0);
+vector<double> res(m0);
+//double *eigenvalues = new double[m0];
+//complexd *eigenvectors = new complexd[n*m0];
+//double * res = new double[m0];
 //std::vector<double> eigenvalues(m0);
 //std::vector<complexd> eigenvectors(m0);
 //std::vector<double> res(m0);
 
-//zfeast_hcsrgv(&uplo,&n,Kred.valuesData(),rowIndexA.data(),Kred.columnsData(),Mred.valuesData(),rowIndexB.data(),Mred.columnsData(),
-//              fpm,&epsout,&loop,&emin,&emax,&m0,eigenvalues,eigenvectors,&m,res,&info);
+//zfeast_hcsrgv(&uplo,&n,Kred.valuesData(),rowIndexA.data(),ja.data(),Mred.valuesData(),rowIndexB.data(),jb.data(),
+//              fpm,&epsout,&loop,&emin,&emax,&m0,eigenvalues.data(),eigenvectors.begin(),&m,res.data(),&info);
+
 zfeast_hcsrgv(&uplo,&n,A.data(),rowIndexA.data(),ja.data(),B.data(),rowIndexB.data(),jb.data(),
-              fpm,&epsout,&loop,&emin,&emax,&m0,eigenvalues,eigenvectors,&m,res,&info);
+              fpm,&epsout,&loop,&emin,&emax,&m0,eigenvalues.data(),eigenvectors.data(),&m,res.data(),&info);
+
+cout << "Number of eigenvalues: " << m << "\n";
 
 /******************************************************************/
 
