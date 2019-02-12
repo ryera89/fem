@@ -66,12 +66,12 @@ inline Sparse_MatComplexd fononic_elemental_stiffness_matrix(const VecDoub &Xe,i
             MatComplexd B = R + imagB;
             MatComplexd conjB = R - imagB;
             double wdetJ = w*detJT;
-//            double C11 = Xe(j)*mat1.m_C11 + (1-Xe(j))*mat2.m_C11;
-//            double C12 = Xe(j)*mat1.m_C12 + (1-Xe(j))*mat2.m_C12;
-//            double C33 = Xe(j)*mat1.m_C33 + (1-Xe(j))*mat2.m_C33;
-            double C11 = 266.5519;
-            double C12 = 114.2365;
-            double C33 = 76.1577;
+            double C11 = Xe(j)*mat1.m_C11 + (1-Xe(j))*mat2.m_C11;
+            double C12 = Xe(j)*mat1.m_C12 + (1-Xe(j))*mat2.m_C12;
+            double C33 = Xe(j)*mat1.m_C33 + (1-Xe(j))*mat2.m_C33;
+            //double C11 = 266.5519;
+            //double C12 = 114.2365;
+            //double C33 = 76.1577;
             //******************************************************************
 //            for (size_t m = 0; m < nodxelem; ++m){
 //                //size_t m_indx = m/2;

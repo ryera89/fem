@@ -10,7 +10,7 @@
 #include <iomanip>
 #include <map>
 
-//#define MKL_Complex16 std::complex<double>
+#define MKL_Complex16 std::complex<double>
 //#define MKL_INT uint32_t
 
 #include "mkl.h"
@@ -1227,7 +1227,7 @@ public:
     uint32_t cols() const{return m_cols;}
 
 
-    void printData(){
+    void printData() const{
         for (size_t i = 0; i < m_rows_start.size(); ++i){
             uint32_t beg = m_rows_start[i];
             uint32_t end = m_rows_end[i];
