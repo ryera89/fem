@@ -108,11 +108,11 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> Sparse(std::map<index_pair,T> &v_indx_table,
     size_t nvals = v_indx_table.size();
     //std::vector<T> values(nvals);
     //std::vector<uint32_t> cols(nvals);
-    std::vector<uint32_t> row_start(nrow);
-    std::vector<uint32_t> row_end(nrow);
+    std::vector<int_t> row_start(nrow);
+    std::vector<int_t> row_end(nrow);
     std::vector<T> values;
     values.reserve(nvals);
-    std::vector<uint32_t> cols;
+    std::vector<int_t> cols;
     cols.reserve(nvals);
     //std::vector<uint32_t> row_start(nrow);
     //std::vector<uint32_t> row_end(nrow);

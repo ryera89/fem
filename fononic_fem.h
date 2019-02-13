@@ -322,11 +322,11 @@ inline Matrix<T,2,MATRIX_TYPE::CSR> fononic_reduced_system(const Matrix<T,2,MATR
 
     std::vector<T> vvals;
     vvals.reserve(nvals);
-    std::vector<uint32_t> vcols;
+    std::vector<int_t> vcols;
     vcols.reserve(nvals);
-    std::vector<uint32_t> row_start;
+    std::vector<int_t> row_start;
     row_start.reserve(dim);
-    std::vector<uint32_t> row_end;
+    std::vector<int_t> row_end;
     row_end.reserve(dim);
 
     for (uint32_t i = 0; i < dim1; ++i){
